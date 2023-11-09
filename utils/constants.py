@@ -25,5 +25,6 @@ MINUS_EMOJI = "<:GiftifyMinus:1122076950421327872>"
 BLANK_SPACE = "<:GiftifyBlank:1121694102673707079>"
 
 BOT_INVITE = "https://discord.com/api/oauth2/authorize?client_id=1089552642696552488&permissions=511040&redirect_uri=https%3A%2F%2Fdiscord.gg%2FGQSGChbEKz&response_type=code&scope=bot%20applications.commands"
+SOURCE_CODE = "https://github.com/giftify-bot/giftify-bot"
 VOTE_URL = "https://top.gg/bot/1089552642696552488/vote"
 SUPPORT_SERVER = "https://discord.gg/GQSGChbEKz"

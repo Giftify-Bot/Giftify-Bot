@@ -21,6 +21,7 @@ from utils.constants import (
     ONLINE_EMOJI,
     SETTINGS_EMOJI,
     SIGNAL_EMOJI,
+    SOURCE_CODE,
     SUPPORT_SERVER,
     TOOLS_EMOJI,
     VOTE_URL,
@@ -96,9 +97,7 @@ class Meta(commands.Cog):
         database_end_time = time.monotonic()
         database_latency = round((database_end_time - database_start_time) * 1000)
 
-        embed = discord.Embed(
-            title="Ping Information", timestamp=datetime.datetime.now()
-        )
+        embed = discord.Embed(title="Ping Information", timestamp=datetime.datetime.now())
 
         if client_latency < 200 and api_latency < 100 and database_latency < 100:
             embed.color = discord.Color.green()
@@ -146,9 +145,7 @@ class Meta(commands.Cog):
         owner_names = await self.owners()
 
         embed = discord.Embed(title="Giftify - Statistics", color=discord.Color.green())
-        embed.add_field(
-            name=f"{DEVELOPER_EMOJI} Owners", value="\n".join(owner_names), inline=False
-        )
+        embed.add_field(name=f"{DEVELOPER_EMOJI} Owners", value="\n".join(owner_names), inline=False)
 
         system = (
             "```ansi\n"
@@ -200,9 +197,7 @@ class Meta(commands.Cog):
         )
 
         embed.set_thumbnail(url=self.bot.user.display_avatar)
-        embed.set_author(
-            name=interaction.user.display_name, icon_url=interaction.user.display_avatar
-        )
+        embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar)
         await interaction.followup.send(embed=embed)
 
     @app_commands.command()
@@ -218,6 +213,25 @@ class Meta(commands.Cog):
         embed.set_thumbnail(url=self.bot.user.display_avatar)
         view = discord.ui.View()
         view.add_item(discord.ui.Button(label="Invite", url=BOT_INVITE))
+        embed.set_footer(
+            text=f"Requested by {interaction.user.display_name}",
+            icon_url=interaction.user.display_avatar,
+        )
+        await interaction.response.send_message(embed=embed, view=view)
+
+    @app_commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.guild_only()
+    async def source(self, interaction: Interaction):
+        """View the source code of the bot."""
+        embed = discord.Embed(
+            title="Source 🤖",
+            description="> Click the button below to view the source code of bot!",
+            color=discord.Colour.green(),
+        )
+        embed.set_thumbnail(url=self.bot.user.display_avatar)
+        view = discord.ui.View()
+        view.add_item(discord.ui.Button(label="Source", url=SOURCE_CODE))
         embed.set_footer(
             text=f"Requested by {interaction.user.display_name}",
             icon_url=interaction.user.display_avatar,
