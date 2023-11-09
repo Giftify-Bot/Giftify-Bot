@@ -2,7 +2,7 @@
 name = "giftify-bot"
 version = "1.1.4"
 description = "Easy to use giveaway bot for discord."
-authors = ["AmazingAkai akai.is.amazing@gmail.com"]
+authors = ["AmazingAkai <akai.is.amazing@gmail.com>"]
 license = "GPLv3"
 readme = "README.md"
 
