@@ -7,10 +7,7 @@ from utils.tree import Interaction
 
 
 def is_valid_message(message: str) -> bool:
-    if "{winners}" and "{prize}" in message:
-        return True
-    else:
-        return False
+    return "{winners}" and "{prize}" in message
 
 
 class GiveawayEndMessage(commands.GroupCog):

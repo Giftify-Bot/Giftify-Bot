@@ -7,10 +7,7 @@ from utils.tree import Interaction
 
 
 def is_valid_message(message: str) -> bool:
-    if "{winners}" and "{prize}" in message:
-        return True
-    else:
-        return False
+    return "{winners}" and "{prize}" in message
 
 
 class GiveawayRerollMessage(commands.GroupCog):
@@ -19,9 +16,7 @@ class GiveawayRerollMessage(commands.GroupCog):
     @app_commands.command(name="reroll_message")
     @app_commands.describe(message="The message to send when a giveaway rerolls.")
     @app_commands.checks.cooldown(1, 15, key=lambda i: (i.guild, i.user.id))
-    async def reroll_message(
-        self, interaction: Interaction, message: Range[str, 15, 255]
-    ):
+    async def reroll_message(self, interaction: Interaction, message: Range[str, 15, 255]):
         """Customize the giveaway reroll message."""
 
         assert isinstance(interaction.user, discord.Member)
