@@ -8,16 +8,7 @@ import pathlib
 import sys
 import traceback
 from logging.handlers import RotatingFileHandler
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncGenerator,
-    Dict,
-    List,
-    NamedTuple,
-    Optional,
-    Tuple,
-)
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import aiohttp
 import asyncpg
