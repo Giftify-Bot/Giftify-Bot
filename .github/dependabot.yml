@@ -1,0 +1,9 @@
+version: 2
+updates:
+  # Enable daily update checks for pip packages in the root directory
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: daily
+    ignore:
+      - dependency-name: "emoji"

@@ -1,0 +1,7 @@
+*.log*
+*.db*
+*.pyc
+__pycache__
+.vscode
+giftifyenv
+venv
