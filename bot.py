@@ -96,7 +96,6 @@ class LogHandler:
     def __enter__(self: "LogHandler") -> "LogHandler":
         logging.getLogger("discord").setLevel(logging.INFO)
         logging.getLogger("discord.http").setLevel(logging.INFO)
-        logging.getLogger("hondana.http").setLevel(logging.INFO)
         logging.getLogger("discord.state").addFilter(RemoveNoise())
 
         self.log.setLevel(logging.INFO)
@@ -108,9 +107,7 @@ class LogHandler:
             backupCount=5,
         )
         dt_fmt = "%Y-%m-%d %H:%M:%S"
-        fmt = logging.Formatter(
-            "[{asctime}] [{levelname:<7}] {name}: {message}", dt_fmt, style="{"
-        )
+        fmt = logging.Formatter("[{asctime}] [{levelname:<7}] {name}: {message}", dt_fmt, style="{")
         handler.setFormatter(fmt)
         self.log.addHandler(handler)
 
@@ -126,9 +123,9 @@ class LogHandler:
 
     def __exit__(self, *args: Any) -> None:
         handlers = self.log.handlers[:]
-        for hdlr in handlers:
-            hdlr.close()
-            self.log.removeHandler(hdlr)
+        for handler in handlers:
+            handler.close()
+            self.log.removeHandler(handler)
 
 
 class GiftifyHelper:
@@ -136,9 +133,7 @@ class GiftifyHelper:
     donation_configs: List[GuildDonationConfig] = []
     cached_giveaways: List["Giveaway"] = []
     webhook_cache: Dict[discord.TextChannel, discord.Webhook] = {}
-    raffles_cache: Dict[discord.Guild, List[Raffle]] = ExpiringDict(
-        max_len=100, max_age_seconds=300
-    )
+    raffles_cache: Dict[discord.Guild, List[Raffle]] = ExpiringDict(max_len=100, max_age_seconds=300)
 
     pool: asyncpg.Pool
     user: discord.ClientUser
@@ -171,13 +166,7 @@ class GiftifyHelper:
         ephemeral: bool
             If the response should be sent ephemerally.
         """
-        emoji = (
-            WARN_EMOJI
-            if reason == "warn"
-            else ERROR_EMOJI
-            if reason == "error"
-            else SUCCESS_EMOJI
-        )
+        emoji = WARN_EMOJI if reason == "warn" else ERROR_EMOJI if reason == "error" else SUCCESS_EMOJI
         colour = (
             discord.Colour.orange()
             if reason == "warn"
@@ -190,9 +179,7 @@ class GiftifyHelper:
         if interaction.response.is_done():
             await interaction.followup.send(embed=embed, view=view, ephemeral=ephemeral)
         else:
-            await interaction.response.send_message(
-                embed=embed, view=view, ephemeral=ephemeral
-            )
+            await interaction.response.send_message(embed=embed, view=view, ephemeral=ephemeral)
 
     async def get_webhook(self, channel: discord.TextChannel) -> discord.Webhook:
         """Looks up a webhook in cache and creates if not found.
@@ -217,9 +204,7 @@ class GiftifyHelper:
                     if hook.user and hook.user.id == self.user.id:
                         self.webhook_cache[channel] = hook
                         return hook
-        hook = await channel.create_webhook(
-            name="Giftify Logging", avatar=await channel.guild.me.display_avatar.read()
-        )
+        hook = await channel.create_webhook(name="Giftify Logging", avatar=await channel.guild.me.display_avatar.read())
         self.webhook_cache[channel] = hook
         return hook
 
@@ -243,9 +228,7 @@ class GiftifyHelper:
 
         return config
 
-    def get_donation_config(
-        self, guild: discord.Guild, category: str
-    ) -> Optional[GuildDonationConfig]:
+    def get_donation_config(self, guild: discord.Guild, category: str) -> Optional[GuildDonationConfig]:
         """Finds the donation config of a guild for some category.
 
         Parameters
@@ -277,9 +260,7 @@ class GiftifyHelper:
         List[str]
             The of names of donation categories.
         """
-        return [
-            config.category for config in self.donation_configs if config.guild == guild
-        ]
+        return [config.category for config in self.donation_configs if config.guild == guild]
 
     async def fetch_raffle(self, guild: discord.Guild, name: str) -> Optional[Raffle]:
         """Finds a raffle in some guild.
@@ -296,15 +277,11 @@ class GiftifyHelper:
         Optional[Raffle]
             The fetched raffle.
         """
-        record = await self.pool.fetchrow(
-            "SELECT * FROM raffles WHERE guild = $1 AND name = $2", guild.id, name
-        )
+        record = await self.pool.fetchrow("SELECT * FROM raffles WHERE guild = $1 AND name = $2", guild.id, name)
         if record is not None:
             return await Raffle.from_record(self, record=record)  # type: ignore
 
-    async def fetch_raffles(
-        self, guild: discord.Guild, use_cache: bool = True
-    ) -> List[Raffle]:
+    async def fetch_raffles(self, guild: discord.Guild, use_cache: bool = True) -> List[Raffle]:
         """Fetch all the raffles in some guild
 
         Parameters
@@ -322,17 +299,13 @@ class GiftifyHelper:
         if guild in self.raffles_cache and use_cache:
             return self.raffles_cache[guild]
 
-        records = await self.pool.fetch(
-            "SELECT * FROM raffles WHERE guild = $1", guild.id
-        )
+        records = await self.pool.fetch("SELECT * FROM raffles WHERE guild = $1", guild.id)
         raffles = [await Raffle.from_record(self, record=record) for record in records]  # type: ignore
         self.raffles_cache[guild] = raffles
 
         return raffles
 
-    async def fetch_giveaway(
-        self, *, guild_id: int, channel_id: int, message_id: int
-    ) -> Optional[Giveaway]:
+    async def fetch_giveaway(self, *, guild_id: int, channel_id: int, message_id: int) -> Optional[Giveaway]:
         """Looks up a for a giveaway object in database.
 
         Parameters
@@ -366,9 +339,7 @@ class GiftifyHelper:
 
             return giveaway
 
-    async def running_giveaways(
-        self, *, guild_id: Optional[int] = None, sort_by_ends: bool = True
-    ) -> List[Giveaway]:
+    async def running_giveaways(self, *, guild_id: Optional[int] = None, sort_by_ends: bool = True) -> List[Giveaway]:
         """Looks up a list of active giveaways in the database.
 
         Parameters
@@ -499,9 +470,7 @@ class Giftify(GiftifyHelper, commands.AutoShardedBot):
         self._amari_client = amari_client
 
         intents = discord.Intents(messages=True, emojis=True, guilds=True)
-        allowed_mentions = discord.AllowedMentions(
-            everyone=False, roles=False, users=True, replied_user=False
-        )
+        allowed_mentions = discord.AllowedMentions(everyone=False, roles=False, users=True, replied_user=False)
         member_cache_flags = discord.MemberCacheFlags.from_intents(intents=intents)
 
         sentry_sdk.init(
@@ -524,9 +493,7 @@ class Giftify(GiftifyHelper, commands.AutoShardedBot):
             allowed_mentions=allowed_mentions,
             chunk_guilds_at_startup=False,
             max_messages=None,
-            activity=discord.CustomActivity(
-                name="\N{LINK SYMBOL} https://giftifybot.vercel.app"
-            ),
+            activity=discord.CustomActivity(name="\N{LINK SYMBOL} https://giftifybot.vercel.app"),
             member_cache_flags=member_cache_flags,
             owner_ids=OWNER_IDS,
         )
@@ -555,18 +522,12 @@ class Giftify(GiftifyHelper, commands.AutoShardedBot):
         raise NotImplementedError("Please use `.start()` instead.")
 
     async def on_ready(self) -> None:
-        self.log_handler.log.info(
-            "%s got a ready event at %s", self.user.name, datetime.datetime.now()
-        )
+        self.log_handler.log.info("%s got a ready event at %s", self.user.name, datetime.datetime.now())
 
     async def on_resume(self) -> None:
-        self.log_handler.log.info(
-            "%s got a resume event at %s", self.user.name, datetime.datetime.now()
-        )
+        self.log_handler.log.info("%s got a resume event at %s", self.user.name, datetime.datetime.now())
 
-    async def on_command_error(
-        self, ctx: commands.Context, error: commands.CommandError
-    ) -> None:
+    async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
         if isinstance(error, commands.CommandInvokeError):
             origin_ = error.original
             assert ctx.command is not None
@@ -580,9 +541,7 @@ class Giftify(GiftifyHelper, commands.AutoShardedBot):
         await super().start(token=os.environ["TOKEN"], reconnect=True)
 
     async def setup_hook(self) -> None:
-        self.start_time: datetime.datetime = datetime.datetime.now(
-            datetime.timezone.utc
-        )
+        self.start_time: datetime.datetime = datetime.datetime.now(datetime.timezone.utc)
 
         self.bot_app_info = await self.application_info()
         self.owner_ids = OWNER_IDS
@@ -612,9 +571,7 @@ class Giftify(GiftifyHelper, commands.AutoShardedBot):
         else:
             return user
 
-    async def get_or_fetch_member(
-        self, guild: discord.Guild, member_id: int
-    ) -> Optional[discord.Member]:
+    async def get_or_fetch_member(self, guild: discord.Guild, member_id: int) -> Optional[discord.Member]:
         """Looks up a member in cache or fetches if not found.
 
         Parameters
@@ -657,9 +614,7 @@ async def main() -> None:
         max_size=20,
         init=db_init,
         statement_cache_size=0,
-    ) as pool, LogHandler() as log_handler, AmariClient(
-        os.environ["AMARI_TOKEN"]
-    ) as amari_client, Giftify(
+    ) as pool, LogHandler() as log_handler, AmariClient(os.environ["AMARI_TOKEN"]) as amari_client, Giftify(
         log_handler=log_handler, pool=pool, session=session, amari_client=amari_client
     ) as bot:
         await bot.load_extension("jishaku")
