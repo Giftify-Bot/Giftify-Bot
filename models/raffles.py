@@ -20,6 +20,10 @@ class FakeMember:
     def __init__(self, id: int) -> None:
         self.id = id
 
+    @property
+    def mention(self) -> str:
+        return f"<@{self.id}>"
+
 
 @overload
 def filter_none(obj: List[Optional[T]]) -> List[T]:
@@ -105,10 +109,7 @@ class Raffle:
         winner: Optional[discord.Member] = (await bot.get_or_fetch_member(guild, winner_id) or FakeMember(winner_id)) if winner_id else None  # type: ignore
 
         deputy_roles = [guild.get_role(role_id) for role_id in record["deputy_roles"]]
-        deputy_members = [
-            await bot.get_or_fetch_member(guild, member_id)
-            for member_id in record["deputy_members"]
-        ]
+        deputy_members = [await bot.get_or_fetch_member(guild, member_id) for member_id in record["deputy_members"]]
 
         tickets = {
             await bot.get_or_fetch_member(guild, int(member_id)): num_tickets
@@ -218,9 +219,7 @@ class Raffle:
 
             await self.save()
         else:
-            raise RaffleError(
-                f"That member does not have any tickets in {self.name} raffle."
-            )
+            raise RaffleError(f"That member does not have any tickets in {self.name} raffle.")
 
     async def save(self) -> None:
         """
@@ -240,10 +239,7 @@ class Raffle:
             self.winner.id if self.winner else None,
             [role.id for role in self.deputy_roles],
             [member.id for member in self.deputy_members],
-            {
-                str(member.id): num_tickets
-                for member, num_tickets in self.tickets.items()
-            },
+            {str(member.id): num_tickets for member, num_tickets in self.tickets.items()},
         )
 
     async def delete(self):
