@@ -1,8 +1,7 @@
-import asyncio
 import contextlib
 import datetime
 import logging
-from typing import Generator, List, Optional
+from typing import Generator, List
 
 import asyncpg
 import discord
@@ -21,6 +20,7 @@ from utils.view import BaseView
 log = logging.getLogger("timers")
 
 
+@app_commands.guild_only()
 class Timers(commands.GroupCog, name="timer"):
     """A cog for starting and managing simple timers."""
 
@@ -43,9 +43,7 @@ class Timers(commands.GroupCog, name="timer"):
         current_length = 0
 
         for mention in user_mentions:
-            mention_length = (
-                len(mention) + 2
-            )  # Add 2 for the comma and space characters
+            mention_length = len(mention) + 2  # Add 2 for the comma and space characters
             if current_length + mention_length > 2000:
                 yield ", ".join(chunk)
                 chunk = []
@@ -78,9 +76,7 @@ class Timers(commands.GroupCog, name="timer"):
 
         assert interaction.guild is not None
         if not isinstance(interaction.channel, discord.TextChannel):
-            return await interaction.client.send(
-                interaction, "You cannot use that command in this channel type."
-            )
+            return await interaction.client.send(interaction, "You cannot use that command in this channel type.")
 
         embed = discord.Embed(
             description=f"The timer will end {discord.utils.format_dt(time, style='R')} ({discord.utils.format_dt(time, style='f')})",
@@ -134,14 +130,10 @@ class Timers(commands.GroupCog, name="timer"):
             message_id=message.id,
         )
         if not timer or timer.event != "timer":
-            return await interaction.client.send(
-                interaction, "That is not a valid timer message.", "warn"
-            )
+            return await interaction.client.send(interaction, "That is not a valid timer message.", "warn")
 
         if timer.author_id != interaction.user.id:
-            return await interaction.client.send(
-                interaction, "That is not your timer message.", "warn"
-            )
+            return await interaction.client.send(interaction, "That is not your timer message.", "warn")
         await self.bot.timer_cog.call_timer(timer, manually=True)
         await interaction.client.send(interaction, "Timer successfully ended!")
 
@@ -167,14 +159,10 @@ class Timers(commands.GroupCog, name="timer"):
             message_id=message.id,
         )
         if not timer or timer.event != "timer":
-            return await interaction.client.send(
-                interaction, "That is not a valid timer message.", "warn"
-            )
+            return await interaction.client.send(interaction, "That is not a valid timer message.", "warn")
 
         if timer.author_id != interaction.user.id:
-            return await interaction.client.send(
-                interaction, "That is not your timer message.", "warn"
-            )
+            return await interaction.client.send(interaction, "That is not your timer message.", "warn")
 
         await self.cancel_timer(timer)
 
@@ -191,9 +179,7 @@ class Timers(commands.GroupCog, name="timer"):
             except Exception as error:
                 if not isinstance(error, discord.HTTPException):
                     sentry_sdk.capture_exception(error)
-                    log.error(
-                        "Ignoring exception in call timer function", exc_info=error
-                    )
+                    log.error("Ignoring exception in call timer function", exc_info=error)
             else:
                 expired_at = datetime.datetime.now(datetime.timezone.utc)
 
@@ -213,22 +199,12 @@ class Timers(commands.GroupCog, name="timer"):
                 with contextlib.suppress(discord.HTTPException):
                     await message.edit(embed=embed)
                     view = BaseView()
-                    view.add_item(
-                        discord.ui.Button(label="Jump To Message", url=message.jump_url)
-                    )
-                    await message.reply(
-                        f"The timer for **{timer.title}** has ended.", view=view
-                    )
+                    view.add_item(discord.ui.Button(label="Jump To Message", url=message.jump_url))
+                    await message.reply(f"The timer for **{timer.title}** has ended.", view=view)
                 if timer_reactions := [
-                    reaction
-                    for reaction in message.reactions
-                    if str(reaction.emoji) == TIMER_EMOJI
+                    reaction for reaction in message.reactions if str(reaction.emoji) == TIMER_EMOJI
                 ]:
-                    mentions = [
-                        user.mention
-                        async for user in timer_reactions[0].users()
-                        if not user.bot
-                    ]
+                    mentions = [user.mention async for user in timer_reactions[0].users() if not user.bot]
 
                     for chunk in self._to_chunks(mentions):
                         with contextlib.suppress(discord.HTTPException):

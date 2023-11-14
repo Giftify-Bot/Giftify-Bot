@@ -47,11 +47,17 @@ class CommandTree(app_commands.CommandTree):
         )
 
         if isinstance(error, app_commands.CommandInvokeError):
-            if not isinstance(error, discord.HTTPException):
-                embed.description = f"{WARN_EMOJI} An unknown error occurred , my developers have been notified about this error."
-                self.client.log_handler.log.exception(
-                    "Exception occurred in the CommandTree:\n", exc_info=error
+            if isinstance(error, MaxChannelConfigCreationError):
+                embed.description = (
+                    f"{WARN_EMOJI} You cannot setup configuration for more than 25 channels, please try removing some."
                 )
+            elif isinstance(error, discord.HTTPException):
+                embed.description = f"{WARN_EMOJI} Unknown HTTP error occured!"
+            else:
+                embed.description = (
+                    f"{WARN_EMOJI} An unknown error occurred , my developers have been notified about this error."
+                )
+                self.client.log_handler.log.exception("Exception occurred in the CommandTree:\n", exc_info=error)
                 sentry_sdk.capture_exception(error)
         elif isinstance(error, app_commands.TransformerError):
             if isinstance(error, TransformerError):
@@ -59,25 +65,19 @@ class CommandTree(app_commands.CommandTree):
             else:
                 embed.description = f"{WARN_EMOJI} {str(error)}"
                 sentry_sdk.capture_exception(error)
-                self.client.log_handler.log.exception(
-                    "Exception occurred in the CommandTree:\n", exc_info=error
-                )
+                self.client.log_handler.log.exception("Exception occurred in the CommandTree:\n", exc_info=error)
 
         elif isinstance(error, app_commands.MissingPermissions):
-            missing = [
-                perm.replace("_", " ").replace("guild", "server").title()
-                for perm in error.missing_permissions
-            ]
+            missing = [perm.replace("_", " ").replace("guild", "server").title() for perm in error.missing_permissions]
 
             format = "\n> ".join(missing)
 
-            embed.description = f"{WARN_EMOJI} You are missing follwing permission(s) to run this command: \n\n> {format}"
+            embed.description = (
+                f"{WARN_EMOJI} You are missing follwing permission(s) to run this command: \n\n> {format}"
+            )
 
         elif isinstance(error, app_commands.BotMissingPermissions):
-            missing = [
-                perm.replace("_", " ").replace("guild", "server").title()
-                for perm in error.missing_permissions
-            ]
+            missing = [perm.replace("_", " ").replace("guild", "server").title() for perm in error.missing_permissions]
 
             format = "\n> ".join(missing)
 
@@ -89,9 +89,7 @@ class CommandTree(app_commands.CommandTree):
             embed.description = f"{WARN_EMOJI} The cooldown for this command is **{cooldown}s**. Try running the command again after **{retry_after}s**."
 
         elif isinstance(error, app_commands.CommandNotFound):
-            embed.description = (
-                f'{WARN_EMOJI} The command "{error.name}" was not found.'
-            )
+            embed.description = f'{WARN_EMOJI} The command "{error.name}" was not found.'
         elif isinstance(error, DonationError):
             embed.description = f"{WARN_EMOJI} {str(error)}"
         elif isinstance(error, app_commands.CheckFailure):
@@ -99,14 +97,12 @@ class CommandTree(app_commands.CommandTree):
                 embed.description = f"{WARN_EMOJI} {str(error.message)}"
             else:
                 return
-        elif isinstance(error, MaxChannelConfigCreationError):
-            embed.description = f"{WARN_EMOJI} You cannot setup configuration for more than 5 channels, please try removing some."
         else:
-            embed.description = f"{WARN_EMOJI} An unknown error occured, my developers have been notified about this errors."
+            embed.description = (
+                f"{WARN_EMOJI} An unknown error occured, my developers have been notified about this errors."
+            )
             await interaction.followup.send(embed=embed, ephemeral=True)
             sentry_sdk.capture_exception(error)
-            return self.client.log_handler.log.exception(
-                "Exception occurred in the CommandTree:\n", exc_info=error
-            )
+            return self.client.log_handler.log.exception("Exception occurred in the CommandTree:\n", exc_info=error)
 
         return await interaction.followup.send(embed=embed, ephemeral=True)
