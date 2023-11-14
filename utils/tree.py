@@ -64,8 +64,6 @@ class CommandTree(app_commands.CommandTree):
                 embed.description = f"{WARN_EMOJI} {error.message}"
             else:
                 embed.description = f"{WARN_EMOJI} {str(error)}"
-                sentry_sdk.capture_exception(error)
-                self.client.log_handler.log.exception("Exception occurred in the CommandTree:\n", exc_info=error)
 
         elif isinstance(error, app_commands.MissingPermissions):
             missing = [perm.replace("_", " ").replace("guild", "server").title() for perm in error.missing_permissions]
