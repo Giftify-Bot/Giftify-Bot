@@ -82,16 +82,7 @@ class Donations(
         embed.set_author(name=manager.display_name, icon_url=manager.display_avatar)
         embed.set_thumbnail(url=member.display_avatar)
 
-        try:
-            webhook = await self.bot.get_webhook(config.logging)
-        except discord.HTTPException:
-            pass
-        else:
-            await webhook.send(
-                embed=embed,
-                username="Giftify Donation Logging",
-                avatar_url=self.bot.user.display_avatar,
-            )
+        await self.bot.send_to_webhook(channel=config.logging, embed=embed)
 
 
 async def setup(bot: Giftify) -> None:

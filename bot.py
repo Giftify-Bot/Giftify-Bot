@@ -172,20 +172,8 @@ class GiftifyHelper:
         else:
             await interaction.response.send_message(embed=embed, view=view, ephemeral=ephemeral)
 
-    async def get_webhook(self, channel: discord.TextChannel) -> discord.Webhook:
-        """Looks up a webhook in cache and creates if not found.
-
-        Parameters
-        -----------
-        channel: discord.TextChannel
-            The channel to fetch webhook from.
-
-        Returns
-        ---------
-        discord.Webhook
-            The fetched webhook object.
-        """
-        if webhook := self.webhook_cache.get(channel):
+    async def _get_webhook(self, channel: discord.TextChannel, force_create: bool = False) -> discord.Webhook:
+        if not force_create and (webhook := self.webhook_cache.get(channel)):
             return webhook
 
         webhook_list = await channel.webhooks()
@@ -195,9 +183,30 @@ class GiftifyHelper:
                     if hook.user and hook.user.id == self.user.id:
                         self.webhook_cache[channel] = hook
                         return hook
+
+        # If no suitable webhook is found, create a new one
         hook = await channel.create_webhook(name="Giftify Logging", avatar=await channel.guild.me.display_avatar.read())
         self.webhook_cache[channel] = hook
         return hook
+
+    async def send_to_webhook(self, channel: discord.TextChannel, embed: discord.Embed):
+        """Sends an embed to a webhook associated with the provided channel.
+
+        Parameters
+        -----------
+        channel: discord.TextChannel
+            The channel to send message to.
+
+        """
+        try:
+            webhook = await self._get_webhook(channel)
+            await webhook.send(embed=embed, username="Giftify Logging", avatar_url=self.user.display_avatar)
+        except discord.NotFound:
+            new_webhook = await self._get_webhook(channel, force_create=True)
+            await new_webhook.send(embed=embed, username="Giftify Logging", avatar_url=self.user.display_avatar)
+
+        except discord.HTTPException:
+            return
 
     async def fetch_config(self, guild: discord.Guild) -> GuildConfig:
         """Looks up a guild config in cache or fetches if not found.

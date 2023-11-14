@@ -16,9 +16,7 @@ class DonationSettings(commands.GroupCog):
 
     bot: Giftify
 
-    settings = app_commands.Group(
-        name="settings", description="Manage the donation config.", guild_only=True
-    )
+    settings = app_commands.Group(name="settings", description="Manage the donation config.", guild_only=True)
 
     @settings.command(name="add_manager")
     @app_commands.describe(
@@ -41,9 +39,7 @@ class DonationSettings(commands.GroupCog):
 
         managers = category.managers
         if len(managers) >= 5:
-            return await interaction.client.send(
-                interaction, "You cannot add more than `5` managers.", reason="warn"
-            )
+            return await interaction.client.send(interaction, "You cannot add more than `5` managers.", reason="warn")
         if role in managers:
             return await interaction.client.send(
                 interaction,
@@ -83,9 +79,7 @@ class DonationSettings(commands.GroupCog):
 
         managers = category.managers
         if not role in managers:
-            return await interaction.client.send(
-                interaction, "That role is not set as a manager role.", reason="warn"
-            )
+            return await interaction.client.send(interaction, "That role is not set as a manager role.", reason="warn")
         managers.remove(role)
         await category.update("managers", managers)
 
@@ -140,14 +134,12 @@ class DonationSettings(commands.GroupCog):
 
         await interaction.response.defer(thinking=True)
 
-        try:
-            await interaction.client.get_webhook(channel)
-        except discord.HTTPException:
-            return await interaction.client.send(
-                interaction,
-                "Failed to create a webhook! Make sure to check my permissions.",
-                "warn",
-            )
+        embed = discord.Embed(
+            title="This is a test!",
+            description="This is a test message to check if webhook is functioning",
+            color=discord.Colour.blurple(),
+        )
+        await self.bot.send_to_webhook(channel=channel, embed=embed)
 
         await category.update("logging", channel)
 
