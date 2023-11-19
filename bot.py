@@ -60,6 +60,7 @@ EXTENSIONS: Tuple[str, ...] = (
     "donations",
     "raffles",
     "logger",
+    "webserver",
 )
 
 
