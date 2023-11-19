@@ -96,9 +96,7 @@ class GuildDonationConfig:
         return instance
 
     @classmethod
-    async def from_record(
-        cls, bot: Giftify, *, record: asyncpg.Record
-    ) -> Optional["GuildDonationConfig"]:
+    async def from_record(cls, bot: Giftify, *, record: asyncpg.Record) -> Optional["GuildDonationConfig"]:
         guild = bot.get_guild(record["guild"])
         if not guild:
             return None
@@ -130,9 +128,7 @@ class GuildDonationConfig:
     async def update(
         self,
         key: str,
-        value: Union[
-            str, discord.TextChannel, Dict[int, discord.Role], List[discord.Role]
-        ],
+        value: Union[str, discord.TextChannel, Dict[int, discord.Role], List[discord.Role]],
     ) -> None:
         """
         Update a specific attribute of the GuildDonationConfig.
@@ -181,9 +177,7 @@ class GuildDonationConfig:
             role_ids = [role.id for role in value]
             await self._update_config(key, role_ids)
 
-    async def _update_config(
-        self, key: str, value: Union[str, int, List[int], Dict[int, int]]
-    ) -> None:
+    async def _update_config(self, key: str, value: Union[str, int, List[int], Dict[int, int]]) -> None:
         await self.bot.pool.execute(
             f"UPDATE donation_configs SET {key} = $1 WHERE guild = $2 AND category = $3",
             value,
@@ -194,6 +188,13 @@ class GuildDonationConfig:
     async def delete(self):
         await self.bot.pool.execute(
             "DELETE FROM donation_configs WHERE guild = $1 AND category = $2",
+            self.guild.id,
+            self.category,
+        )
+
+    async def reset(self):
+        await self.bot.pool.execute(
+            "DELETE FROM donations WHERE guild = $1 AND category = $2",
             self.guild.id,
             self.category,
         )

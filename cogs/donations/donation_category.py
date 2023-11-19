@@ -55,9 +55,7 @@ class DonationCategory(commands.GroupCog):
                 "warn",
             )
 
-        config = await GuildDonationConfig.create(
-            interaction.guild.id, category, self.bot, symbol=symbol
-        )
+        config = await GuildDonationConfig.create(interaction.guild.id, category, self.bot, symbol=symbol)
 
         self.bot.donation_configs.append(config)
 
@@ -89,6 +87,29 @@ class DonationCategory(commands.GroupCog):
         if prompt:
             self.bot.donation_configs.remove(category)
             await category.delete()
+
+    @category_command.command(name="reset")
+    @app_commands.describe(category="The unique name of the donation category.")
+    @app_commands.checks.has_permissions(manage_guild=True)
+    @app_commands.checks.cooldown(1, 25, key=lambda i: (i.guild, i.user.id))
+    async def donation_category_reset(
+        self,
+        interaction: Interaction,
+        category: Transform[GuildDonationConfig, DonationCategoryTransformer],
+    ) -> None:
+        """The command to reset all the donations of a donation category."""
+        await interaction.response.defer()
+        assert interaction.guild is not None
+
+        prompt = await interaction.client.prompt(
+            f"Are you sure you want to reset all the donations of donation category {category.category}?",
+            interaction=interaction,
+            success_message=f"Successfully reset all the donations of donation category {category.category}!",
+            cancel_message="Alright, not resetting this time!",
+        )
+
+        if prompt:
+            await category.reset()
 
     @category_command.command(name="list")
     @app_commands.checks.has_permissions(manage_guild=True)
