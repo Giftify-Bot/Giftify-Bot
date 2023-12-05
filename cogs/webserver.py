@@ -63,7 +63,7 @@ class WebServer(commands.Cog):
 
         try:
             async with self.bot.session.post(
-                f"https://top.gg/api/bots/{self.bot.user.id}/stats",
+                f"https://top.gg/api/bots/stats",
                 json=payload,
                 headers=headers,
             ) as resp:
