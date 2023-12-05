@@ -1,11 +1,9 @@
-import datetime
 import logging
 import os
-from typing import Optional
 
-import discord
+import aiohttp
 from aiohttp import web
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from bot import Giftify
 
@@ -19,6 +17,8 @@ class WebServer(commands.Cog):
         self.app.router.add_get("/", self.handle)
         self.app.router.add_post("/guilds", self.handle_guilds)
 
+        self.update_stats.start()
+
     async def cog_load(self):
         runner = web.AppRunner(self.app)
         await runner.setup()
@@ -27,6 +27,7 @@ class WebServer(commands.Cog):
         log.info("Webserver started on port 8080.")
 
     async def cog_unload(self):
+        self.update_stats.stop()
         await self.site.stop()
 
     async def handle(self, request: web.Request):
@@ -47,6 +48,31 @@ class WebServer(commands.Cog):
         ]
 
         return web.json_response({"success": True, "guilds": guilds})
+
+    @tasks.loop(minutes=30)
+    async def update_stats(self):
+        token = os.environ.get("DBL_TOKEN")
+        if token is None:
+            return
+
+        headers = {"Authorization": token, "Content-Type": "application/json"}
+        payload = {
+            "server_count": len(self.bot.guilds),
+            "shard_count": self.bot.shard_count,
+        }
+
+        try:
+            async with self.bot.session.post(
+                f"https://top.gg/api/bots/stats",
+                json=payload,
+                headers=headers,
+            ) as resp:
+                if resp.status == 200:
+                    log.info(f"Server count updated to {payload['server_count']} on Top.gg")
+                else:
+                    log.error(f"Failed to update server count. Status code: {resp.status}")
+        except aiohttp.ClientError as error:
+            log.error(f"Error updating server count: {error}")
 
 
 async def setup(bot: Giftify) -> None:
