@@ -117,9 +117,7 @@ class Giveaway:
         self.multiplier_roles: Dict[int, int] = {
             int(role): entries for role, entries in record["multiplier_roles"].items()
         }
-        self.messages: Dict[int, int] = {
-            int(member): messages for member, messages in record["messages"].items()
-        }
+        self.messages: Dict[int, int] = {int(member): messages for member, messages in record["messages"].items()}
         self.messages_required: Optional[int] = record["messages_required"]
         self.allowed_message_channels: Optional[List[int]] = record["messages_channel"]
         self.amari: Optional[int] = record["amari"]
@@ -174,7 +172,9 @@ class Giveaway:
         if donor:
             description += f"Donor: {donor.mention}\n"
 
-        description += f"Ends: {discord.utils.format_dt(duration, style='R')} ({discord.utils.format_dt(duration, style='f')})\n"
+        description += (
+            f"Ends: {discord.utils.format_dt(duration, style='R')} ({discord.utils.format_dt(duration, style='f')})\n"
+        )
 
         embed = discord.Embed(
             title=prize,
@@ -188,16 +188,18 @@ class Giveaway:
         )
         requirements = ""
         if required_roles:
-            requirements += f"Required Roles: {', '.join(role.mention for role in required_roles if role is not None)}\n"
+            requirements += (
+                f"Required Roles: {', '.join(role.mention for role in required_roles if role is not None)}\n"
+            )
         if bypass_roles:
             requirements += f"Bypass Roles: {', '.join(role.mention for role in bypass_roles if role is not None)}\n"
 
         if blacklisted_roles:
-            requirements += f"Blacklisted Roles: {', '.join(role.mention for role in blacklisted_roles if role is not None)}\n"
-        if messages_required:
             requirements += (
-                f"Messages Required: **{messages_required}** message(s) (5s cooldown)\n"
+                f"Blacklisted Roles: {', '.join(role.mention for role in blacklisted_roles if role is not None)}\n"
             )
+        if messages_required:
+            requirements += f"Messages Required: **{messages_required}** message(s) (5s cooldown)\n"
             if allowed_message_channels:
                 requirements += f"Allowed Channels: {', '.join(f'<#{c.id}>' for c in allowed_message_channels)}\n"
 
@@ -211,15 +213,9 @@ class Giveaway:
 
         if multiplier_roles:
             multiplier_roles_mention = "\n".join(
-                [
-                    f"- {entry}x ・ {role.mention}"
-                    for role, entry in multiplier_roles.items()
-                    if role is not None
-                ]
+                [f"- {entry}x ・ {role.mention}" for role, entry in multiplier_roles.items() if role is not None]
             )
-            embed.add_field(
-                name="Bonus Entries", value=multiplier_roles_mention, inline=False
-            )
+            embed.add_field(name="Bonus Entries", value=multiplier_roles_mention, inline=False)
 
         return embed
 
@@ -264,12 +260,8 @@ class Giveaway:
             weekly_amari=weekly_amari,
             donor=donor,
         )
-        view = GiveawayView(
-            config.reaction, config.participants_reaction, config.button_style
-        )
-        giveaway_message = await interaction.channel.send(
-            config.gw_header, embed=embed, view=view
-        )
+        view = GiveawayView(config.reaction, config.participants_reaction, config.button_style)
+        giveaway_message = await interaction.channel.send(config.gw_header, embed=embed, view=view)
 
         message_embed = discord.Embed(
             title=f"{GIFT_EMOJI} Giveaway",
@@ -283,11 +275,7 @@ class Giveaway:
         extra_message = None
 
         if ping:
-            ping_role = (
-                channel_config.ping
-                if channel_config and channel_config.ping
-                else config.ping
-            )
+            ping_role = channel_config.ping if channel_config and channel_config.ping else config.ping
             extra_message = await interaction.channel.send(
                 ping_role.mention if ping_role else "",
                 embed=message_embed if message else None,  # type: ignore
@@ -318,29 +306,15 @@ class Giveaway:
             donor_id=donor.id if donor else None,
             winner_count=winners,
             ends=duration,
-            required_roles=[role.id for role in required_roles if role is not None]
-            if required_roles
-            else [],
-            blacklisted_roles=[
-                role.id for role in blacklisted_roles if role is not None
-            ]
-            if blacklisted_roles
-            else [],
-            bypass_roles=[role.id for role in bypass_roles if role is not None]
-            if bypass_roles
-            else [],
-            multiplier_roles={
-                role.id: entries
-                for role, entries in multiplier_roles.items()
-                if role is not None
-            }
+            required_roles=[role.id for role in required_roles if role is not None] if required_roles else [],
+            blacklisted_roles=[role.id for role in blacklisted_roles if role is not None] if blacklisted_roles else [],
+            bypass_roles=[role.id for role in bypass_roles if role is not None] if bypass_roles else [],
+            multiplier_roles={role.id: entries for role, entries in multiplier_roles.items() if role is not None}
             if multiplier_roles
             else {},
             messages={},
             messages_required=messages_required,
-            allowed_message_channels=[c.id for c in allowed_message_channels]
-            if allowed_message_channels
-            else [],
+            allowed_message_channels=[c.id for c in allowed_message_channels] if allowed_message_channels else [],
             extra_message_id=extra_message.id if extra_message else None,
             amari=amari,
             weekly_amari=weekly_amari,
@@ -469,26 +443,19 @@ class Giveaway:
                 )
 
         if self.weekly_amari:
-            if (
-                weekly_exp := await self.bot.fetch_weekly_experience(member)
-            ) < self.weekly_amari:
+            if (weekly_exp := await self.bot.fetch_weekly_experience(member)) < self.weekly_amari:
                 raise GiveawayError(
                     f"Your weekly amari experience is less than the required weekly amari experience, you need `{self.weekly_amari - weekly_exp}` more experience point(s) to join the giveaway."
                 )
 
         if self.messages_required and self.messages_required > 0:
-            if (
-                user_messages := self.messages.get(member.id, 0)
-            ) < self.messages_required:
+            if (user_messages := self.messages.get(member.id, 0)) < self.messages_required:
                 raise GiveawayError(
                     f"You have sent less messages than the required messages, you need to send `{self.messages_required - user_messages}` more messages to join the giveaway."
                 )
 
     def can_bypass(self, member: discord.Member) -> bool:
-        return any(
-            member.guild.get_role(role_id) in member.roles
-            for role_id in self.bypass_roles
-        )
+        return any(member.guild.get_role(role_id) in member.roles for role_id in self.bypass_roles)
 
     def get_multiplier_entries(self, member: discord.Member) -> int:
         entries = 0
@@ -516,9 +483,7 @@ class Giveaway:
         query = """UPDATE giveaways SET participants = $1 
                    WHERE guild = $2 AND channel = $3 AND message = $4"""
 
-        await self.bot.pool.execute(
-            query, self.participants, self.guild_id, self.channel_id, self.message_id
-        )
+        await self.bot.pool.execute(query, self.participants, self.guild_id, self.channel_id, self.message_id)
 
         return len(set(self.participants))
 
@@ -526,16 +491,12 @@ class Giveaway:
         if not member.id in self.participants:
             raise GiveawayError("You are not a participant of this giveaway.")
 
-        self.participants = [
-            participant for participant in self.participants if participant != member.id
-        ]
+        self.participants = [participant for participant in self.participants if participant != member.id]
 
         query = """UPDATE giveaways SET participants = $1 
                    WHERE guild = $2 AND channel = $3 AND message = $4"""
 
-        await self.bot.pool.execute(
-            query, self.participants, self.guild_id, self.channel_id, self.message_id
-        )
+        await self.bot.pool.execute(query, self.participants, self.guild_id, self.channel_id, self.message_id)
 
         return len(set(self.participants))
 
@@ -648,18 +609,14 @@ class Giveaway:
             if channel is not None:
                 await channel.get_partial_message(self.extra_message_id).delete()  # type: ignore
 
-    async def dm_host(
-        self, guild: discord.Guild, winners: List[discord.Member], message: str
-    ) -> None:
+    async def dm_host(self, guild: discord.Guild, winners: List[discord.Member], message: str) -> None:
         host = await self.bot.get_or_fetch_member(guild, self.host_id)
         if not host:
             return
 
         description = safe_format(
             message,
-            winners=", ".join(winner.mention for winner in winners)
-            if winners
-            else "No Winners",
+            winners=", ".join(winner.mention for winner in winners) if winners else "No Winners",
             prize=bold(self.prize),
         )
 
@@ -675,9 +632,7 @@ class Giveaway:
 
     async def dm_winners(self, message: str, winners: List[discord.Member]) -> None:
         for winner in winners:
-            description = safe_format(
-                message, winner=winner.mention, prize=bold(self.prize)
-            )
+            description = safe_format(message, winner=winner.mention, prize=bold(self.prize))
 
             embed = discord.Embed(
                 title=f"You won!",
@@ -689,9 +644,7 @@ class Giveaway:
             with contextlib.suppress(discord.HTTPException):
                 await winner.send(embed=embed, view=view)
 
-    async def pick_winners(
-        self, count: int, guild: discord.Guild
-    ) -> List[discord.Member]:
+    async def pick_winners(self, count: int, guild: discord.Guild) -> List[discord.Member]:
         winners = []
 
         participants = self.participants.copy()
@@ -699,9 +652,14 @@ class Giveaway:
         while count > 0 and participants:
             member_id = random.choice(participants)
             member = await self.bot.get_or_fetch_member(guild, member_id)
-            if member:
-                winners.append(member)
-                count -= 1
+            if member is not None:
+                try:
+                    await self.check_requirements(member)
+                except GiveawayError:
+                    pass
+                else:
+                    winners.append(member)
+                    count -= 1
 
             participants.remove(member_id)
 
