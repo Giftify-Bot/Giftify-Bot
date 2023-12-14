@@ -115,7 +115,9 @@ class Giveaway:
         self.blacklisted_roles: List[int] = record["blacklisted_roles"] or []
         self.bypass_roles: List[int] = record["bypass_roles"] or []
         self.multiplier_roles: Dict[int, int] = {
-            int(role): entries for role, entries in record["multiplier_roles"].items()
+            int(role): entries
+            for role, entries in record["multiplier_roles"].items()
+            if entries > 1
         }
         self.messages: Dict[int, int] = {
             int(member): messages for member, messages in record["messages"].items()
@@ -273,7 +275,7 @@ class Giveaway:
 
         message_embed = discord.Embed(
             title=f"{GIFT_EMOJI} Giveaway",
-            description=f"**Message・** {message}",
+            description=f"**Message・** {message}" if message else None,
             color=config.color,
         )
 
@@ -282,7 +284,7 @@ class Giveaway:
 
         extra_message = None
 
-        if ping:
+        if ping or image:
             ping_role = (
                 channel_config.ping
                 if channel_config and channel_config.ping
@@ -290,7 +292,7 @@ class Giveaway:
             )
             extra_message = await interaction.channel.send(
                 ping_role.mention if ping_role else "",
-                embed=message_embed if message else None,  # type: ignore
+                embed=message_embed if message or image else None,  # type: ignore
                 allowed_mentions=discord.AllowedMentions(roles=True),
             )
 
