@@ -75,7 +75,7 @@ class GiveawayDefaults(commands.GroupCog):
         config = await interaction.client.fetch_config(interaction.guild)
 
         required_roles = config.required_roles
-        if not role in required_roles:
+        if role not in required_roles:
             return await interaction.client.send(
                 interaction,
                 "That role is not set as a default requirement role.",
@@ -158,7 +158,7 @@ class GiveawayDefaults(commands.GroupCog):
         config = await interaction.client.fetch_config(interaction.guild)
 
         blacklisted_roles = config.blacklisted_roles
-        if not role in blacklisted_roles:
+        if role not in blacklisted_roles:
             return await interaction.client.send(
                 interaction,
                 "That role is not set as a default blacklist role.",
@@ -238,7 +238,7 @@ class GiveawayDefaults(commands.GroupCog):
         config = await interaction.client.fetch_config(interaction.guild)
 
         bypass_roles = config.bypass_roles
-        if not role in bypass_roles:
+        if role not in bypass_roles:
             return await interaction.client.send(
                 interaction,
                 "That role is not set as a default bypass role.",

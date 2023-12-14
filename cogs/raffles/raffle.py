@@ -17,7 +17,7 @@ class RafflesPaginator(BaseButtonPaginator[Raffle]):
     async def format_page(self, raffles: List[Raffle], /) -> discord.Embed:
         assert self.bot is not None
         extras = self.extras or {}
-        description = f"The raffles in this guild are:\n\n"
+        description = "The raffles in this guild are:\n\n"
 
         embed = discord.Embed(
             title=f"{MONEY_EMOJI} {extras['guild'].name}'s Raffles",
@@ -268,6 +268,13 @@ class RaffleBase(commands.GroupCog):
     ) -> None:
         """Displays tickets of a raffle."""
         await interaction.response.defer()
+
+        if not raffle.tickets:
+            return await interaction.client.send(
+                interaction=interaction,
+                message="Hey, there are no raffle participants yet. You cannot roll a winner",
+                ephemeral=True,
+            )
 
         winner = await raffle.roll()
 

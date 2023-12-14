@@ -63,14 +63,18 @@ class WebServer(commands.Cog):
 
         try:
             async with self.bot.session.post(
-                f"https://top.gg/api/bots/stats",
+                "https://top.gg/api/bots/stats",
                 json=payload,
                 headers=headers,
             ) as resp:
                 if resp.status == 200:
-                    log.info(f"Server count updated to {payload['server_count']} on Top.gg")
+                    log.info(
+                        f"Server count updated to {payload['server_count']} on Top.gg"
+                    )
                 else:
-                    log.error(f"Failed to update server count. Status code: {resp.status}")
+                    log.error(
+                        f"Failed to update server count. Status code: {resp.status}"
+                    )
         except aiohttp.ClientError as error:
             log.error(f"Error updating server count: {error}")
 

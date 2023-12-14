@@ -106,10 +106,17 @@ class Raffle:
             raise RaffleError("The guild having the raffle was not found.")
 
         winner_id = record["winner"]
-        winner: Optional[discord.Member] = (await bot.get_or_fetch_member(guild, winner_id) or FakeMember(winner_id)) if winner_id else None  # type: ignore
+        winner: Optional[discord.Member] = (
+            (await bot.get_or_fetch_member(guild, winner_id) or FakeMember(winner_id))
+            if winner_id
+            else None
+        )  # type: ignore
 
         deputy_roles = [guild.get_role(role_id) for role_id in record["deputy_roles"]]
-        deputy_members = [await bot.get_or_fetch_member(guild, member_id) for member_id in record["deputy_members"]]
+        deputy_members = [
+            await bot.get_or_fetch_member(guild, member_id)
+            for member_id in record["deputy_members"]
+        ]
 
         tickets = {
             await bot.get_or_fetch_member(guild, int(member_id)): num_tickets
@@ -171,11 +178,11 @@ class Raffle:
             The instance of deputy member or role to be removed.
         """
         if isinstance(obj, discord.Member):
-            if not obj in self.deputy_members:
+            if obj not in self.deputy_members:
                 raise RaffleError("That member is not a deputy.")
             self.deputy_members.remove(obj)
         elif isinstance(obj, discord.Role):
-            if not obj in self.deputy_roles:
+            if obj not in self.deputy_roles:
                 raise RaffleError("That role is not a deputy.")
             self.deputy_roles.remove(obj)
         else:
@@ -219,7 +226,9 @@ class Raffle:
 
             await self.save()
         else:
-            raise RaffleError(f"That member does not have any tickets in {self.name} raffle.")
+            raise RaffleError(
+                f"That member does not have any tickets in {self.name} raffle."
+            )
 
     async def save(self) -> None:
         """
@@ -239,7 +248,10 @@ class Raffle:
             self.winner.id if self.winner else None,
             [role.id for role in self.deputy_roles],
             [member.id for member in self.deputy_members],
-            {str(member.id): num_tickets for member, num_tickets in self.tickets.items()},
+            {
+                str(member.id): num_tickets
+                for member, num_tickets in self.tickets.items()
+            },
         )
 
     async def delete(self):

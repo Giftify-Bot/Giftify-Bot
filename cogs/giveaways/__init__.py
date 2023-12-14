@@ -91,13 +91,20 @@ class GiveawayCog(
         relevant_giveaways = [
             giveaway
             for giveaway in self.bot.cached_giveaways
-            if giveaway.messages_required and giveaway.messages_required > 0 and giveaway.guild_id == message.guild.id
+            if giveaway.messages_required
+            and giveaway.messages_required > 0
+            and giveaway.guild_id == message.guild.id
         ]
 
         for giveaway in relevant_giveaways:
-            if giveaway.allowed_message_channels and message.channel.id not in giveaway.allowed_message_channels:
+            if (
+                giveaway.allowed_message_channels
+                and message.channel.id not in giveaway.allowed_message_channels
+            ):
                 continue
-            retry_after = self.messages_cooldown.update_rate_limit((message.author, giveaway))
+            retry_after = self.messages_cooldown.update_rate_limit(
+                (message.author, giveaway)
+            )
             if retry_after:
                 continue
 
@@ -133,7 +140,9 @@ class GiveawayCog(
             inline=False,
         )
         if host:
-            embed.add_field(name=f"{CROWN_EMOJI} Host", value=host.mention, inline=False)
+            embed.add_field(
+                name=f"{CROWN_EMOJI} Host", value=host.mention, inline=False
+            )
         embed.add_field(
             name=f"{TROPHY_EMOJI} Winner Count",
             value=giveaway.winner_count,
@@ -173,7 +182,7 @@ class GiveawayCog(
 
     @update_message_cache.error
     async def on_update_message_cache_error(self, error: BaseException) -> None:
-        log.exception(f"Error while updating message cache to database:", exc_info=error)
+        log.exception("Error while updating message cache to database:", exc_info=error)
         sentry_sdk.capture_exception(error)
 
     @commands.Cog.listener()
@@ -190,7 +199,9 @@ class GiveawayCog(
         if giveaway in self.bot.cached_giveaways:
             self.bot.cached_giveaways.remove(giveaway)
 
-        self.bot.dispatch("giveaway_action", GiveawayAction.END, giveaway, self.bot.user)
+        self.bot.dispatch(
+            "giveaway_action", GiveawayAction.END, giveaway, self.bot.user
+        )
 
         await giveaway.end()
 
