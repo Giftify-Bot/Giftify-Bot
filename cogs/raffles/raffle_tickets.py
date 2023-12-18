@@ -88,7 +88,7 @@ class RaffleTickets(commands.GroupCog):
             )
 
         try:
-            await raffle.add_tickets(member, tickets)
+            await raffle.remove_tickets(member, tickets)
         except RaffleError as error:
             return await interaction.client.send(
                 interaction=interaction,
@@ -99,7 +99,7 @@ class RaffleTickets(commands.GroupCog):
 
         await interaction.client.send(
             interaction=interaction,
-            message=f"Successfully added `{tickets}` tickets to {member.mention}.",
+            message=f"Successfully removed `{tickets}` tickets from {member.mention}.",
         )
 
     @tickets.command(name="show")
