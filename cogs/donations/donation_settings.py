@@ -1,5 +1,3 @@
-from typing import List
-
 import discord
 from discord import app_commands
 from discord.app_commands import Range, Transform
@@ -16,7 +14,9 @@ class DonationSettings(commands.GroupCog):
 
     bot: Giftify
 
-    settings = app_commands.Group(name="settings", description="Manage the donation config.", guild_only=True)
+    settings = app_commands.Group(
+        name="settings", description="Manage the donation config.", guild_only=True
+    )
 
     @settings.command(name="add_manager")
     @app_commands.describe(
@@ -39,7 +39,9 @@ class DonationSettings(commands.GroupCog):
 
         managers = category.managers
         if len(managers) >= 5:
-            return await interaction.client.send(interaction, "You cannot add more than `5` managers.", reason="warn")
+            return await interaction.client.send(
+                interaction, "You cannot add more than `5` managers.", reason="warn"
+            )
         if role in managers:
             return await interaction.client.send(
                 interaction,
@@ -78,8 +80,10 @@ class DonationSettings(commands.GroupCog):
         await interaction.response.defer(thinking=True)
 
         managers = category.managers
-        if not role in managers:
-            return await interaction.client.send(interaction, "That role is not set as a manager role.", reason="warn")
+        if role not in managers:
+            return await interaction.client.send(
+                interaction, "That role is not set as a manager role.", reason="warn"
+            )
         managers.remove(role)
         await category.update("managers", managers)
 

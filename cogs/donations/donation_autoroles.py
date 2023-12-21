@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import discord
 from discord import app_commands
-from discord.app_commands import Range, Transform
+from discord.app_commands import Transform
 from discord.ext import commands
 
 from bot import Giftify
@@ -18,13 +18,13 @@ class RolesPaginator(BaseButtonPaginator[Tuple[int, discord.Role]]):
     ) -> discord.Embed:
         assert self.bot is not None
 
-        description = f"The donation autoroles of this server are:\n\n"
+        description = "The donation autoroles of this server are:\n\n"
 
         for i, (amount, role) in enumerate(roles):
             description += f"`{i + 1}.` {role.mention} - **{amount:,}**.\n"
 
         embed = discord.Embed(
-            title=f"Donation Autoroles",
+            title="Donation Autoroles",
             description=description,
             color=self.bot.colour,
         )
@@ -96,6 +96,40 @@ class DonationAutorole(commands.GroupCog):
         await interaction.client.send(
             interaction,
             f"Successfully updated the role of amount **{category.symbol} {amount:,}** to be {role.mention!r}.",
+        )
+
+    @autorole.command(name="reset")
+    @app_commands.describe(
+        category="The name of the donation category.",
+        amount="The amount to reset.",
+    )
+    @app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild, i.user.id))
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def donation_autorole_reset(
+        self,
+        interaction: Interaction,
+        category: Transform[GuildDonationConfig, DonationCategoryTransformer],
+        amount: Transform[int, AmountTransformer],
+    ) -> None:
+        """The command to reset donation autorole for some amount."""
+        await interaction.response.defer()
+
+        assert interaction.guild is not None
+        assert isinstance(interaction.user, discord.Member)
+
+        roles = category.roles
+        if amount not in roles:
+            return await interaction.client.send(
+                interaction=interaction,
+                message="No donation autorole set for that amount.",
+            )
+        del roles[amount]
+
+        await category.update("roles", roles)
+
+        await interaction.client.send(
+            interaction,
+            f"Successfully reset the donation role of amount **{category.symbol} {amount:,}**.",
         )
 
     @autorole.command(name="list")
