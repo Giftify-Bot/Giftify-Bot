@@ -133,7 +133,7 @@ class DonationCategory(commands.GroupCog):
 
         await category.update("category", name)
 
-        message = f"Successfully renamed the donation category {category} to {name!r}."
+        message = f"Successfully renamed that donation category to {name!r}."
 
         await interaction.client.send(
             interaction,
