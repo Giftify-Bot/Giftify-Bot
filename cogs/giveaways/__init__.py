@@ -136,7 +136,7 @@ class GiveawayCog(
         )
         embed.add_field(
             name=f"{TIMER_EMOJI} Ends At",
-            value={discord.utils.format_dt(giveaway.ends, style="R")},
+            value=discord.utils.format_dt(giveaway.ends, style="R"),
             inline=False,
         )
         if host:

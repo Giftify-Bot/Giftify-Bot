@@ -145,7 +145,7 @@ CREATE TABLE IF NOT EXISTS donations (
   category VARCHAR(50),
   amount BIGINT NOT NULL DEFAULT 0,
   PRIMARY KEY (member, guild, category),
-  FOREIGN KEY (guild, category) REFERENCES donation_configs(guild, category) ON DELETE CASCADE
+  FOREIGN KEY (guild, category) REFERENCES donation_configs(guild, category) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_donations ON donations (member, guild, category);

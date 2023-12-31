@@ -55,7 +55,7 @@ class DonationsLeaderboardPaginator(BaseButtonPaginator[asyncpg.Record]):
     async def format_page(self, donations: List[asyncpg.Record], /) -> discord.Embed:
         assert self.bot is not None
         extras = self.extras or {}
-        description = f"The top donors of this server are:\n\n"
+        description = "The top donors of this server are:\n\n"
 
         for i, record in enumerate(donations):
             description += f"`{i + 1}.` <@!{record['member']}> - **{extras.get('symbol')} {record['amount']:,}**\n"

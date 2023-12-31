@@ -1,5 +1,4 @@
 import datetime
-from typing import Optional
 
 import discord
 from discord import app_commands
@@ -34,7 +33,7 @@ class DonationCategory(commands.GroupCog):
         self,
         interaction: Interaction,
         category: Range[str, 3, 50],
-        symbol: Optional[Range[str, 1, 1]] = "$",
+        symbol: Range[str, 1, 1] = "$",
     ) -> None:
         """The command to create a new donation category."""
         await interaction.response.defer()
@@ -55,7 +54,9 @@ class DonationCategory(commands.GroupCog):
                 "warn",
             )
 
-        config = await GuildDonationConfig.create(interaction.guild.id, category, self.bot, symbol=symbol)
+        config = await GuildDonationConfig.create(
+            interaction.guild.id, category, self.bot, symbol=symbol
+        )
 
         self.bot.donation_configs.append(config)
 
@@ -111,6 +112,35 @@ class DonationCategory(commands.GroupCog):
         if prompt:
             await category.reset()
 
+    @category_command.command(name="rename")
+    @app_commands.describe(
+        category="The unique name of the donation category.",
+        name="The new name for the category.",
+    )
+    @app_commands.checks.has_permissions(manage_guild=True)
+    @app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild, i.user.id))
+    async def donation_category_rename(
+        self,
+        interaction: Interaction,
+        category: Transform[GuildDonationConfig, DonationCategoryTransformer],
+        name: Range[str, 1, 50],
+    ) -> None:
+        """The command to rename a donation category."""
+        assert isinstance(interaction.user, discord.Member)
+        assert interaction.guild is not None
+
+        await interaction.response.defer(thinking=True)
+
+        await category.update("category", name)
+
+        message = f"Successfully renamed the donation category {category} to {name!r}."
+
+        await interaction.client.send(
+            interaction,
+            message,
+            "success",
+        )
+
     @category_command.command(name="list")
     @app_commands.checks.has_permissions(manage_guild=True)
     @app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild, i.user.id))
@@ -134,6 +164,6 @@ class DonationCategory(commands.GroupCog):
         else:
             await interaction.client.send(
                 interaction,
-                f"This guild has no donation categories",
+                "This guild has no donation categories",
                 "warn",
             )
