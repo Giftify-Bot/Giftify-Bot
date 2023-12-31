@@ -6,10 +6,8 @@ import discord
 import emoji
 from discord import app_commands
 from discord.ext import commands
-from discord.interactions import Interaction
 
 from models.donation_settings import GuildDonationConfig
-from models.giveaways import Giveaway
 from models.raffles import Raffle
 from utils.exceptions import (
     InvalidAmount,
@@ -116,9 +114,9 @@ class BonusRolesTransformer(app_commands.Transformer):
         ctx = await commands.Context.from_interaction(interaction)
 
         for multiplier_roles_role_string in roles_string:
-            if not ":" in multiplier_roles_role_string:
+            if ":" not in multiplier_roles_role_string:
                 raise InvalidRolesPassed(
-                    f"You must use `:` to split the role and bonus entries."
+                    "You must use `:` to split the role and bonus entries."
                 )
             try:
                 (
