@@ -96,7 +96,9 @@ class GuildDonationConfig:
         return instance
 
     @classmethod
-    async def from_record(cls, bot: Giftify, *, record: asyncpg.Record) -> Optional["GuildDonationConfig"]:
+    async def from_record(
+        cls, bot: Giftify, *, record: asyncpg.Record
+    ) -> Optional["GuildDonationConfig"]:
         guild = bot.get_guild(record["guild"])
         if not guild:
             return None
@@ -105,7 +107,9 @@ class GuildDonationConfig:
         symbol = record["symbol"]
         roles = {}
         managers = []
-        logging: Optional[discord.TextChannel] = guild.get_channel(record["logging"]) if record["logging"] else None  # type: ignore
+        logging: Optional[discord.TextChannel] = (
+            guild.get_channel(record["logging"]) if record["logging"] else None
+        )  # type: ignore
 
         for amount, role_id in record["roles"].items():
             if role := guild.get_role(role_id):
@@ -128,7 +132,9 @@ class GuildDonationConfig:
     async def update(
         self,
         key: str,
-        value: Union[str, discord.TextChannel, Dict[int, discord.Role], List[discord.Role]],
+        value: Union[
+            str, discord.TextChannel, Dict[int, discord.Role], List[discord.Role]
+        ],
     ) -> None:
         """
         Update a specific attribute of the GuildDonationConfig.
@@ -156,8 +162,8 @@ class GuildDonationConfig:
             )
 
         if key in ["category", "symbol"]:
-            setattr(self, key, value)
             await self._update_config(key, str(value))
+            setattr(self, key, value)
         elif key == "logging":
             if not isinstance(value, discord.TextChannel):
                 raise ValueError("Value for 'logging' must be a discord.TextChannel.")
@@ -177,7 +183,9 @@ class GuildDonationConfig:
             role_ids = [role.id for role in value]
             await self._update_config(key, role_ids)
 
-    async def _update_config(self, key: str, value: Union[str, int, List[int], Dict[int, int]]) -> None:
+    async def _update_config(
+        self, key: str, value: Union[str, int, List[int], Dict[int, int]]
+    ) -> None:
         await self.bot.pool.execute(
             f"UPDATE donation_configs SET {key} = $1 WHERE guild = $2 AND category = $3",
             value,
