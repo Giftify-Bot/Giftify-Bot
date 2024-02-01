@@ -246,11 +246,12 @@ class Raffle:
             self.guild.id,
             self.name,
             self.winner.id if self.winner else None,
-            [role.id for role in self.deputy_roles],
-            [member.id for member in self.deputy_members],
+            [role.id for role in self.deputy_roles if role is not None],
+            [member.id for member in self.deputy_members if member is not None],
             {
                 str(member.id): num_tickets
                 for member, num_tickets in self.tickets.items()
+                if member is not None
             },
         )
 
