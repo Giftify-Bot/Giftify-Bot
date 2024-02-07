@@ -3,15 +3,16 @@ import os
 
 import aiohttp
 from aiohttp import web
+from aiohttp.web import Response
 from discord.ext import commands, tasks
 
-from bot import Giftify
+from core.bot import Giftify
 
 log = logging.getLogger("cogs.webserver")
 
 
 class WebServer(commands.Cog):
-    def __init__(self, bot: Giftify):
+    def __init__(self, bot: Giftify) -> None:
         self.bot = bot
         self.app = web.Application()
         self.app.router.add_get("/", self.handle)
@@ -19,21 +20,21 @@ class WebServer(commands.Cog):
 
         self.update_stats.start()
 
-    async def cog_load(self):
+    async def cog_load(self) -> None:
         runner = web.AppRunner(self.app)
         await runner.setup()
         self.site = web.TCPSite(runner, "0.0.0.0", 8080)
         await self.site.start()
         log.info("Webserver started on port 8080.")
 
-    async def cog_unload(self):
+    async def cog_unload(self) -> None:
         self.update_stats.stop()
         await self.site.stop()
 
-    async def handle(self, request: web.Request):
+    async def handle(self, request: web.Request) -> Response:
         return web.json_response({"success": 200})
 
-    async def handle_guilds(self, request: web.Request):
+    async def handle_guilds(self, request: web.Request) -> Response:
         if request.headers.get("Authorization") != os.environ["WEBSERVER_AUTH"]:
             return web.json_response({"error": "401: Unauthorized"}, status=401)
 
@@ -50,7 +51,7 @@ class WebServer(commands.Cog):
         return web.json_response({"success": True, "guilds": guilds})
 
     @tasks.loop(minutes=30)
-    async def update_stats(self):
+    async def update_stats(self) -> None:
         token = os.environ.get("DBL_TOKEN")
         if token is None:
             return
@@ -66,17 +67,13 @@ class WebServer(commands.Cog):
                 "https://top.gg/api/bots/stats",
                 json=payload,
                 headers=headers,
-            ) as resp:
-                if resp.status == 200:
-                    log.info(
-                        f"Server count updated to {payload['server_count']} on Top.gg"
-                    )
+            ) as response:
+                if response.status == 200:
+                    log.info("Server count updated to %s on Top.gg", payload["server_count"])
                 else:
-                    log.error(
-                        f"Failed to update server count. Status code: {resp.status}"
-                    )
+                    log.error("Failed to update server count. Status code: %s", response.status)
         except aiohttp.ClientError as error:
-            log.error(f"Error updating server count: {error}")
+            log.error("Error updating server count: %s", error)
 
 
 async def setup(bot: Giftify) -> None:

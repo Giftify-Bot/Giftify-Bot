@@ -5,6 +5,7 @@ import discord
 import sentry_sdk
 from discord.ext import commands
 
+from core.tree import Interaction
 from utils.constants import (
     GIVEAWAY_EMOJI,
     PARTICIPANTS_EMOJI,
@@ -13,7 +14,6 @@ from utils.constants import (
 )
 from utils.exceptions import ButtonOnCooldown, GiveawayError
 from utils.paginator import BaseButtonPaginator
-from utils.tree import Interaction
 
 if TYPE_CHECKING:
     from models.giveaways import Giveaway

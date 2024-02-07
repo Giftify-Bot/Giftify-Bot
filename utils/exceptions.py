@@ -27,7 +27,7 @@ __all__: Tuple[str, ...] = (
 class TransformerError(app_commands.TransformerError):
     """Custom Exception raised when transforming"""
 
-    def __init__(self, message: str):
+    def __init__(self, message: str) -> None:
         self.message = message
 
 
@@ -89,12 +89,12 @@ class DonationError(Exception):
 
 
 class DonationPermissionsError(app_commands.CheckFailure):
-    def __init__(self, message: str):
+    def __init__(self, message: str) -> None:
         self.message = message
 
 
 class DonationCategoryError(app_commands.CheckFailure):
-    def __init__(self, message: str):
+    def __init__(self, message: str) -> None:
         self.message = message
 
 

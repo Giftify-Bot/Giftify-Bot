@@ -8,8 +8,8 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-asyncpg = "^0.28.0"
-discord-py = {version = "2.3.2", extras = ["speed"]}
+asyncpg = "0.28.0"
+discord-py = { version = "2.3.2", extras = ["speed"] }
 python-dotenv = "^1.0.0"
 jishaku = "^2.5.2"
 sentry-sdk = "^1.39.1"
@@ -19,14 +19,54 @@ psutil = "^5.9.6"
 py-cpuinfo = "^9.0.0"
 colorama = "^0.4.6"
 uvloop = "^0.19.0"
-amari-py = {git = "https://github.com/Giftify-Bot/amari.py"}
-
-[tool.poetry.dev-dependencies]
-black = "^22.12.0"
+amari-py = { git = "https://github.com/Giftify-Bot/amari.py" }
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.black]
-line-length = 120
+[tool.ruff]
+line-length = 125
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "W",
+    "C90",
+    "F",
+    "UP",
+    "B",
+    "SIM",
+    "I",
+    "N",
+    "ANN",
+    "ASYNC",
+    "C4",
+    "EM",
+    "FA",
+    "ICN",
+    "G",
+    "PIE",
+    "T20",
+    "ARG",
+    "ERA",
+    "LOG",
+    "PL",
+    "TRY",
+]
+ignore = [
+    "E501",
+    "ANN401",
+    "ANN101",
+    "ANN102",
+    "ANN002",
+    "ANN003",
+    "PLR0913",
+    "PLR2004",
+    "PLR0917",
+    "PLR6301",
+]
+preview = true
+
+[tool.ruff.lint.pyupgrade]
+keep-runtime-typing = true

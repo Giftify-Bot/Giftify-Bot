@@ -10,7 +10,8 @@ from colorama import Fore, Style
 from discord import app_commands
 from discord.ext import commands
 
-from bot import Giftify
+from core.bot import Giftify
+from core.tree import Interaction
 from utils.constants import (
     ARROW_EMOJI,
     BLANK_SPACE,
@@ -26,8 +27,7 @@ from utils.constants import (
     TOOLS_EMOJI,
     VOTE_URL,
 )
-from utils.tree import Interaction
-from utils.view import BaseView, MainView
+from utils.view import MainView
 
 
 class Meta(commands.Cog):
@@ -97,7 +97,9 @@ class Meta(commands.Cog):
         database_end_time = time.monotonic()
         database_latency = round((database_end_time - database_start_time) * 1000)
 
-        embed = discord.Embed(title="Ping Information", timestamp=datetime.datetime.now())
+        embed = discord.Embed(
+            title="Ping Information", timestamp=datetime.datetime.now()
+        )
 
         if client_latency < 200 and api_latency < 100 and database_latency < 100:
             embed.color = discord.Color.green()
@@ -145,7 +147,9 @@ class Meta(commands.Cog):
         owner_names = await self.owners()
 
         embed = discord.Embed(title="Giftify - Statistics", color=discord.Color.green())
-        embed.add_field(name=f"{DEVELOPER_EMOJI} Owners", value="\n".join(owner_names), inline=False)
+        embed.add_field(
+            name=f"{DEVELOPER_EMOJI} Owners", value="\n".join(owner_names), inline=False
+        )
 
         system = (
             "```ansi\n"
@@ -197,7 +201,9 @@ class Meta(commands.Cog):
         )
 
         embed.set_thumbnail(url=self.bot.user.display_avatar)
-        embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar)
+        embed.set_author(
+            name=interaction.user.display_name, icon_url=interaction.user.display_avatar
+        )
         await interaction.followup.send(embed=embed)
 
     @app_commands.command()

@@ -7,6 +7,7 @@ import emoji
 from discord import app_commands
 from discord.ext import commands
 
+from core.tree import Interaction
 from models.donation_settings import GuildDonationConfig
 from models.raffles import Raffle
 from utils.exceptions import (
@@ -21,7 +22,6 @@ from utils.exceptions import (
     InvalidRolesPassed,
     InvalidTime,
 )
-from utils.tree import Interaction
 
 TIME_REGEX = re.compile(r"(\d{1,5}(?:[.,]?\d{1,5})?)([smhd])")
 TIME_DICT = {"s": 1, "m": 60, "h": 3600, "d": 86400}

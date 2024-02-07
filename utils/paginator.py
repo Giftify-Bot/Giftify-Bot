@@ -11,11 +11,11 @@ try:
 except ImportError:
     from typing_extensions import TypeAlias
 
+from core.tree import Interaction
 from utils.constants import ARROW_BACK_EMOJI, ARROW_EMOJI, STOP_EMOJI
-from utils.tree import Interaction
 
 if TYPE_CHECKING:
-    from bot import Giftify
+    from core.bot import Giftify
 
 T = TypeVar("T")
 TargetType: TypeAlias = Union[Interaction, commands.Context["Giftify"]]

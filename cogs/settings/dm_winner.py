@@ -2,7 +2,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from utils.tree import Interaction
+from core.tree import Interaction
 
 
 class GiveawayDMWinner(commands.GroupCog):

@@ -1,21 +1,25 @@
-import contextlib
-import datetime
-import logging
-from typing import Generator, List
+from __future__ import annotations
 
-import asyncpg
+import contextlib
+import logging
+from datetime import datetime
+from typing import TYPE_CHECKING
+
 import discord
 import sentry_sdk
 from discord import app_commands
 from discord.app_commands import Transform
 from discord.ext import commands
 
-from bot import Giftify
+from core.bot import Giftify
+from core.tree import Interaction
 from models.timers import Timer
 from utils.constants import TIMER_EMOJI
 from utils.transformers import MessageTransformer, TimeTransformer
-from utils.tree import Interaction
 from utils.view import BaseView
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 log = logging.getLogger("timers")
 
@@ -38,7 +42,7 @@ class Timers(commands.GroupCog, name="timer"):
                 pass
 
     @staticmethod
-    def _to_chunks(user_mentions: List[str]) -> Generator[str, None, None]:
+    def _to_chunks(user_mentions: list[str]) -> Generator[str, None, None]:
         chunk = []
         current_length = 0
 
@@ -62,15 +66,13 @@ class Timers(commands.GroupCog, name="timer"):
         time="The time at which the timer will end. Must be less than 2 weeks.",
         title="The title of the timer.",
     )
-    @app_commands.checks.bot_has_permissions(
-        embed_links=True, send_messages=True, view_channel=True, add_reactions=True
-    )
+    @app_commands.checks.bot_has_permissions(embed_links=True, send_messages=True, view_channel=True, add_reactions=True)
     async def timer_start(
         self,
         interaction: Interaction,
-        time: Transform[datetime.datetime, TimeTransformer],
+        time: Transform[datetime, TimeTransformer],
         title: app_commands.Range[str, 3, 100] = "Timer",
-    ):
+    ) -> None:
         """Starts a timer."""
         await interaction.response.defer(ephemeral=True)
 
@@ -118,7 +120,7 @@ class Timers(commands.GroupCog, name="timer"):
         self,
         interaction: Interaction,
         message: Transform[discord.PartialMessage, MessageTransformer],
-    ):
+    ) -> None:
         """Ends a timer."""
         await interaction.response.defer(ephemeral=True)
 
@@ -147,7 +149,7 @@ class Timers(commands.GroupCog, name="timer"):
         self,
         interaction: Interaction,
         message: Transform[discord.PartialMessage, MessageTransformer],
-    ):
+    ) -> None:
         """Cancels a timer."""
         await interaction.response.defer(ephemeral=True)
 
@@ -181,7 +183,7 @@ class Timers(commands.GroupCog, name="timer"):
                     sentry_sdk.capture_exception(error)
                     log.error("Ignoring exception in call timer function", exc_info=error)
             else:
-                expired_at = datetime.datetime.now(datetime.timezone.utc)
+                expired_at = discord.utils.utcnow()
 
                 embed = discord.Embed(
                     description=f"The timer ended {discord.utils.format_dt(expired_at, style='R')} ({discord.utils.format_dt(expired_at, style='f')})",
@@ -201,9 +203,7 @@ class Timers(commands.GroupCog, name="timer"):
                     view = BaseView()
                     view.add_item(discord.ui.Button(label="Jump To Message", url=message.jump_url))
                     await message.reply(f"The timer for **{timer.title}** has ended.", view=view)
-                if timer_reactions := [
-                    reaction for reaction in message.reactions if str(reaction.emoji) == TIMER_EMOJI
-                ]:
+                if timer_reactions := [reaction for reaction in message.reactions if str(reaction.emoji) == TIMER_EMOJI]:
                     mentions = [user.mention async for user in timer_reactions[0].users() if not user.bot]
 
                     for chunk in self._to_chunks(mentions):
@@ -215,5 +215,5 @@ class Timers(commands.GroupCog, name="timer"):
                             )
 
 
-async def setup(bot: Giftify):
+async def setup(bot: Giftify) -> None:
     await bot.add_cog(Timers(bot))

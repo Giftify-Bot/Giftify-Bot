@@ -4,6 +4,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from core.tree import Interaction
 from utils.constants import (
     ARROW_EMOJI,
     BLANK_SPACE,
@@ -11,7 +12,6 @@ from utils.constants import (
     ON_EMOJI,
     SETTINGS_EMOJI,
 )
-from utils.tree import Interaction
 
 
 def emoji(value: bool) -> str:

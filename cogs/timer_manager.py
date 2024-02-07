@@ -8,7 +8,7 @@ import discord
 import sentry_sdk
 from discord.ext import commands
 
-from bot import Giftify
+from core.bot import Giftify
 from models.timers import Timer
 
 log = logging.getLogger("timers")
@@ -56,13 +56,9 @@ class TimerManager(commands.Cog):
         event_name = f"{timer.event}_end"
         self.bot.dispatch(event_name, timer)
 
-        if manually:
-            if (
-                self._current_timer
-                and self._current_timer.message_id == timer.message_id
-            ):
-                self._task.cancel()
-                self._task = self.bot.loop.create_task(self.dispatch_timers())
+        if manually and self._current_timer and self._current_timer.message_id == timer.message_id:
+            self._task.cancel()
+            self._task = self.bot.loop.create_task(self.dispatch_timers())
 
     async def create_timer(
         self,
@@ -115,9 +111,7 @@ class TimerManager(commands.Cog):
         event_name = f"{timer.event}_end"
         self.bot.dispatch(event_name, timer)
 
-    async def get_timer(
-        self, *, guild_id: int, channel_id: int, message_id: int
-    ) -> Optional[Timer]:
+    async def get_timer(self, *, guild_id: int, channel_id: int, message_id: int) -> Optional[Timer]:
         record = await self.bot.pool.fetchrow(
             "SELECT * FROM timers WHERE guild = $1 AND channel = $2 AND message = $3",
             guild_id,
@@ -168,5 +162,5 @@ class TimerManager(commands.Cog):
             sentry_sdk.capture_exception(error)
 
 
-async def setup(bot: Giftify):
+async def setup(bot: Giftify) -> None:
     await bot.add_cog(TimerManager(bot))

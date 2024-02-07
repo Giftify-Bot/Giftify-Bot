@@ -1,9 +1,8 @@
 import discord
 from discord import app_commands
-from discord.ext import commands
 
-from bot import Giftify
-from utils.tree import Interaction
+from core.bot import Giftify
+from core.tree import Interaction
 
 # Command imports
 from .button_colour import GiveawayButtonColour

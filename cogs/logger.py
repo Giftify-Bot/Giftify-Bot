@@ -10,8 +10,8 @@ if TYPE_CHECKING:
     from discord import Guild
     from discord.app_commands import Command
 
-    from bot import Giftify
-    from utils.tree import Interaction
+    from core.bot import Giftify
+    from core.tree import Interaction
 
 
 def setup_logger(name, filename, dt_fmt, fmt, level=logging.INFO):

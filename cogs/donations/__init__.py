@@ -5,7 +5,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from bot import Giftify
+from core.bot import Giftify
 from models.donation_settings import DonationAction, GuildDonationConfig
 from utils.constants import (
     CROWN_EMOJI,

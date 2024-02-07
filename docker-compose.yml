@@ -1,0 +1,33 @@
+services:
+  bot:
+    container_name: giftify
+    build:
+      context: .
+    env_file:
+      - .env
+    volumes:
+      - ./logs/:/app/logs/:rw
+    ports:
+      - 8080:8080
+    restart: unless-stopped
+    depends_on:
+      - db
+    develop:
+      watch:
+        - action: rebuild
+          path: .
+          ignore:
+            - logs/
+  db:
+    container_name: db
+    image: postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD=youshallnotpass
+      - POSTGRES_USER=giftify
+      - POSTGRES_DB=db
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:

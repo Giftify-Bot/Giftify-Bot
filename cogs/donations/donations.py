@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import contextlib
 import datetime
-from typing import List, Optional, Tuple
+from typing import Callable, TypeVar
 
 import asyncpg
 import discord
@@ -9,7 +10,8 @@ from discord import app_commands
 from discord.app_commands import Transform
 from discord.ext import commands
 
-from bot import Giftify
+from core.bot import Giftify
+from core.tree import Interaction
 from models.donation_settings import DonationAction, GuildDonationConfig
 from utils.constants import (
     DONATE_EMOJI,
@@ -25,10 +27,12 @@ from utils.exceptions import (
 )
 from utils.paginator import BaseButtonPaginator
 from utils.transformers import AmountTransformer, DonationCategoryTransformer
-from utils.tree import Interaction
+from utils.view import BaseView
+
+T = TypeVar("T")
 
 
-def is_manager():
+def is_manager() -> Callable[[T], T]:
     async def predicate(interaction: Interaction) -> bool:
         assert interaction.guild is not None
         assert isinstance(interaction.user, discord.Member)
@@ -36,23 +40,21 @@ def is_manager():
         category = interaction.namespace.category
         config = interaction.client.get_donation_config(interaction.guild, category)
         if not config:
-            raise DonationCategoryError("That is not a valid donation category.")
+            raise DonationCategoryError(message="That is not a valid donation category.")
         if interaction.user.guild_permissions.manage_guild:
             return True
 
         for role in config.managers:
             if role in interaction.user.roles:
                 return True
-        else:
-            raise DonationPermissionsError(
-                "You do not have permissions to use this command."
-            )
+
+        raise DonationPermissionsError(message="You do not have permissions to use this command.")
 
     return app_commands.check(predicate)
 
 
 class DonationsLeaderboardPaginator(BaseButtonPaginator[asyncpg.Record]):
-    async def format_page(self, donations: List[asyncpg.Record], /) -> discord.Embed:
+    async def format_page(self, donations: list[asyncpg.Record], /) -> discord.Embed:
         assert self.bot is not None
         extras = self.extras or {}
         description = "The top donors of this server are:\n\n"
@@ -66,10 +68,52 @@ class DonationsLeaderboardPaginator(BaseButtonPaginator[asyncpg.Record]):
             color=self.bot.colour,
         )
         embed.set_thumbnail(url=self.bot.user.display_avatar)
-
         embed.set_footer(text=f"Page {self.current_page}/{self.total_pages}")
 
         return embed
+
+
+class DonationCheckSelect(discord.ui.Select):
+    view: DonationCheckView
+
+    def __init__(self, categories: list[str], parent: DonationCommands) -> None:
+        options = [discord.SelectOption(label=category.title(), value=category) for category in categories]
+        super().__init__(placeholder="Select a donation category.", options=options)
+        self.parent = parent
+
+    async def callback(self, interaction: Interaction) -> None:
+        assert interaction.guild is not None
+        assert isinstance(interaction.user, discord.Member)
+
+        category = interaction.client.get_donation_config(interaction.guild, self.values[0])
+        if category is None:
+            return await interaction.response.send_message(
+                f"Looks like the category `{self.values[0]}` got deleted",
+                ephemeral=True,
+            )
+
+        embed = await self.parent.get_donation_embed(category, interaction.user)
+
+        await interaction.response.edit_message(embed=embed, view=self.view)
+
+
+class DonationCheckView(BaseView):
+    def __init__(self, interaction: Interaction, categories: list[str], parent: DonationCommands) -> None:
+        super().__init__()
+        self.interaction = interaction
+        self.donation_check = DonationCheckSelect(categories, parent)
+        self.add_item(self.donation_check)
+
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        if interaction.user != self.interaction.user:
+            await interaction.client.send(interaction, message="This is not for you.", reason="warn", ephemeral=True)
+            return False
+        return True
+
+    async def on_timeout(self) -> None:
+        self.donation_check.disabled = True
+        with contextlib.suppress(discord.HTTPException):
+            await self.interaction.edit_original_response(view=self)
 
 
 class DonationCommands(commands.GroupCog):
@@ -79,27 +123,23 @@ class DonationCommands(commands.GroupCog):
 
     async def update_roles(
         self, member: discord.Member, amount: int, config: GuildDonationConfig
-    ) -> Tuple[List[str], List[str]]:
-        to_add: List[discord.Role] = []
-        to_remove: List[discord.Role] = []
+    ) -> tuple[list[str], list[str]]:
+        to_add: list[discord.Role] = []
+        to_remove: list[discord.Role] = []
 
         for role_amount, role in config.roles.items():
             if amount >= role_amount:
                 if role not in member.roles:
                     to_add.append(role)
-            else:
-                if role in member.roles:
-                    to_remove.append(role)
 
-        try:
+            elif role in member.roles:
+                to_remove.append(role)
+
+        with contextlib.suppress(discord.HTTPException):
             await member.add_roles(*to_add)
-        except discord.HTTPException:
-            pass
 
-        try:
+        with contextlib.suppress(discord.HTTPException):
             await member.remove_roles(*to_remove)
-        except discord.HTTPException:
-            pass
 
         return [role.mention for role in to_add], [role.mention for role in to_remove]
 
@@ -110,43 +150,32 @@ class DonationCommands(commands.GroupCog):
         amount: int,
         action: DonationAction,
         config: GuildDonationConfig,
-    ) -> Tuple[int, List[str], List[str]]:
-        async with self.bot.pool.acquire() as connection:
-            async with connection.transaction():
-                query = """SELECT amount FROM donations
+    ) -> tuple[int, list[str], list[str]]:
+        async with self.bot.pool.acquire() as connection, connection.transaction():
+            query = """SELECT amount FROM donations
                         WHERE member = $1 AND guild = $2 AND category = $3"""
-                existing_amount = await connection.fetchval(
-                    query, member.id, member.guild.id, config.category
-                )
+            existing_amount = await connection.fetchval(query, member.id, member.guild.id, config.category)
 
-                if action == DonationAction.ADD:
-                    query = """INSERT INTO donations (member, guild, category, amount)
+            if action == DonationAction.ADD:
+                query = """INSERT INTO donations (member, guild, category, amount)
                             VALUES ($1, $2, $3, $4)
                             ON CONFLICT (member, guild, category)
                             DO UPDATE SET amount = donations.amount + $4
                             RETURNING amount"""
-                    updated_amount = await connection.fetchval(
-                        query, member.id, member.guild.id, config.category, amount
-                    )
-                else:
-                    if existing_amount is None or amount > existing_amount:
-                        raise DonationError(
-                            "Cannot remove more than the existing amount."
-                        )
-                    else:
-                        query = """UPDATE donations
+                updated_amount = await connection.fetchval(query, member.id, member.guild.id, config.category, amount)
+            elif existing_amount is None or amount > existing_amount:
+                msg = "Cannot remove more than the existing amount."
+                raise DonationError(msg)
+            else:
+                query = """UPDATE donations
                                 SET amount = amount - $1
                                 WHERE member = $2 AND guild = $3 AND category = $4
                                 RETURNING amount"""
-                        updated_amount = await connection.fetchval(
-                            query, amount, member.id, member.guild.id, config.category
-                        )
+                updated_amount = await connection.fetchval(query, amount, member.id, member.guild.id, config.category)
 
-                roles_added, roles_removed = await self.update_roles(
-                    member, updated_amount, config
-                )
+            roles_added, roles_removed = await self.update_roles(member, updated_amount, config)
 
-                return updated_amount, roles_added, roles_removed
+            return updated_amount, roles_added, roles_removed
 
     @app_commands.command(name="add")
     @app_commands.describe(
@@ -200,9 +229,7 @@ class DonationCommands(commands.GroupCog):
             )
         embed.set_thumbnail(url=member.display_avatar)
 
-        embed.set_author(
-            name=interaction.user.display_name, icon_url=interaction.user.display_avatar
-        )
+        embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar)
 
         await interaction.followup.send(embed=embed)
 
@@ -271,9 +298,7 @@ class DonationCommands(commands.GroupCog):
             )
         embed.set_thumbnail(url=member.display_avatar)
 
-        embed.set_author(
-            name=interaction.user.display_name, icon_url=interaction.user.display_avatar
-        )
+        embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar)
 
         await interaction.followup.send(embed=embed)
 
@@ -338,9 +363,7 @@ class DonationCommands(commands.GroupCog):
             )
         embed.set_thumbnail(url=member.display_avatar)
 
-        embed.set_author(
-            name=interaction.user.display_name, icon_url=interaction.user.display_avatar
-        )
+        embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar)
 
         await interaction.followup.send(embed=embed)
 
@@ -354,6 +377,26 @@ class DonationCommands(commands.GroupCog):
             category,
         )
 
+    async def get_donation_embed(self, category: GuildDonationConfig, member: discord.Member) -> discord.Embed:
+        amount: int | None = await self.bot.pool.fetchval(
+            "SELECT amount FROM donations WHERE member = $1 AND guild = $2 AND category = $3 LIMIT 1",
+            member.id,
+            member.guild.id,
+            category.category,
+        )
+
+        embed = discord.Embed(
+            title="Donation",
+            description=f"{MONEY_EMOJI} {member.mention} has donated **{category.symbol} {amount or 0:,}** for `{category.category}`.",
+            color=discord.Color.green(),
+            timestamp=datetime.datetime.now(),
+        )
+
+        embed.set_thumbnail(url=member.display_avatar)
+        embed.set_author(name=member.display_name, icon_url=member.display_avatar)
+
+        return embed
+
     @app_commands.command(name="check")
     @app_commands.describe(
         category="The name of the donation category.",
@@ -364,35 +407,21 @@ class DonationCommands(commands.GroupCog):
         self,
         interaction: Interaction,
         category: Transform[GuildDonationConfig, DonationCategoryTransformer],
-        member: Optional[discord.Member] = None,
+        member: discord.Member | None = None,
     ) -> None:
         """Check the donation of a user."""
-        await interaction.response.defer()
         assert interaction.guild is not None
+        assert isinstance(interaction.user, discord.Member)
+
         if not member:
-            assert isinstance(interaction.user, discord.Member)
             member = interaction.user
 
-        amount = (
-            await self.bot.pool.fetchval(
-                "SELECT amount FROM donations WHERE member = $1 AND guild = $2 AND category = $3 LIMIT 1",
-                member.id,
-                interaction.guild.id,
-                category.category,
-            )
-            or 0
-        )
+        categories = self.bot.get_guild_donation_categories(interaction.guild)
 
-        embed = discord.Embed(
-            title="Donation",
-            description=f"{MONEY_EMOJI} {member.mention} has donated **{category.symbol} {amount:,}** for `{category.category}`.",
-            color=discord.Color.green(),
-            timestamp=datetime.datetime.now(),
-        )
+        embed = await self.get_donation_embed(category, member)
+        view = DonationCheckView(interaction, categories, self)
 
-        embed.set_thumbnail(url=member.display_avatar)
-        embed.set_author(name=member.display_name, icon_url=member.display_avatar)
-        await interaction.followup.send(embed=embed)
+        await interaction.response.send_message(embed=embed, view=view)
 
     @app_commands.command(name="leaderboard")
     @app_commands.describe(
