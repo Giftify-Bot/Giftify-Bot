@@ -375,7 +375,7 @@ class Giftify(GiftifyHelper, commands.AutoShardedBot):
     user: discord.ClientUser
 
     colour: int = 0xCB3045
-    __version_info__ = "1.2.1"
+    __version_info__ = "1.2.2"
 
     def __init__(
         self,

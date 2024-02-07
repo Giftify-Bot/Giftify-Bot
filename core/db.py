@@ -11,7 +11,10 @@ __all__ = ("db_init",)
 
 
 def _encode_jsonb(value: Any) -> str:
+    if isinstance(value, dict):
+        value = {str(key): val for key, val in value.items() if isinstance(key, str)}
     return orjson.dumps(value).decode("utf-8")
+
 
 
 def _decode_jsonb(value: str) -> Any:
