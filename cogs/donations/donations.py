@@ -76,8 +76,8 @@ class DonationsLeaderboardPaginator(BaseButtonPaginator[asyncpg.Record]):
 class DonationCheckSelect(discord.ui.Select):
     view: DonationCheckView
 
-    def __init__(self) -> None:
-        options = [discord.SelectOption(label=category.title(), value=category) for category in self.view.categories]
+    def __init__(self, categories: list[str]) -> None:
+        options = [discord.SelectOption(label=category.title(), value=category) for category in categories]
         super().__init__(placeholder="Select a donation category.", options=options)
 
     async def callback(self, interaction: Interaction) -> None:
@@ -106,10 +106,9 @@ class DonationCheckView(BaseView):
         super().__init__()
         self.interaction = interaction
         self.member = member
-        self.categories = categories
         self.parent = parent
 
-        self.donation_check = DonationCheckSelect()
+        self.donation_check = DonationCheckSelect(categories)
         self.add_item(self.donation_check)
 
     async def interaction_check(self, interaction: Interaction) -> bool:

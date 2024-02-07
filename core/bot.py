@@ -375,7 +375,7 @@ class Giftify(GiftifyHelper, commands.AutoShardedBot):
     user: discord.ClientUser
 
     colour: int = 0xCB3045
-    __version_info__ = "1.2.3"
+    __version_info__ = "1.2.4"
 
     def __init__(
         self,
@@ -440,7 +440,8 @@ class Giftify(GiftifyHelper, commands.AutoShardedBot):
         return self.get_cog("TimerManager")  # type: ignore
 
     def run(self) -> None:
-        raise NotImplementedError("Please use `.start()` instead.")
+        msg = "Please use `.start()` instead."
+        raise NotImplementedError(msg)
 
     async def on_ready(self) -> None:
         self.log_handler.log.info("%s got a ready event at %s", self.user.name, datetime.datetime.now())
