@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import datetime
-from typing import Callable, TypeVar
+from typing import Callable, Optional, TypeVar
 
 import asyncpg
 import discord
@@ -378,7 +378,7 @@ class DonationCommands(commands.GroupCog):
         )
 
     async def get_donation_embed(self, category: GuildDonationConfig, member: discord.Member) -> discord.Embed:
-        amount: int | None = await self.bot.pool.fetchval(
+        amount: Optional[int] = await self.bot.pool.fetchval(
             "SELECT amount FROM donations WHERE member = $1 AND guild = $2 AND category = $3 LIMIT 1",
             member.id,
             member.guild.id,
@@ -407,7 +407,7 @@ class DonationCommands(commands.GroupCog):
         self,
         interaction: Interaction,
         category: Transform[GuildDonationConfig, DonationCategoryTransformer],
-        member: discord.Member | None = None,
+        member: Optional[discord.Member] = None,
     ) -> None:
         """Check the donation of a user."""
         assert interaction.guild is not None

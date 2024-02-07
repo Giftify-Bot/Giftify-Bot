@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
+from typing import Optional, Union
 
 import asyncpg
 import discord
@@ -64,7 +65,7 @@ class GuildDonationConfig:
         symbol: str,
         roles: dict[int, discord.Role],
         managers: list[discord.Role],
-        logging: discord.TextChannel | None = None,
+        logging: Optional[discord.TextChannel] = None,
     ) -> None:
         self.bot = bot
         self.guild = guild
@@ -81,7 +82,7 @@ class GuildDonationConfig:
         return f"<GuildDonationConfig guild={self.guild!r}> category={self.category}"
 
     @classmethod
-    async def create(cls, guild_id: int, category: str, bot: Giftify, *, symbol: str | None = None) -> GuildDonationConfig:
+    async def create(cls, guild_id: int, category: str, bot: Giftify, *, symbol: Optional[str] = None) -> GuildDonationConfig:
         record = await bot.pool.fetchrow(
             "INSERT INTO donation_configs (guild, category, symbol) VALUES ($1, $2, $3) RETURNING *",
             guild_id,
@@ -93,7 +94,7 @@ class GuildDonationConfig:
         return instance
 
     @classmethod
-    async def from_record(cls, bot: Giftify, *, record: asyncpg.Record) -> GuildDonationConfig | None:
+    async def from_record(cls, bot: Giftify, *, record: asyncpg.Record) -> Optional[GuildDonationConfig]:
         guild = bot.get_guild(record["guild"])
         if not guild:
             return None
@@ -102,7 +103,7 @@ class GuildDonationConfig:
         symbol = record["symbol"]
         roles = {int(amount): role for amount, role_id in record["roles"].items() if (role := guild.get_role(role_id))}
         managers = [role for role_id in record["managers"] if (role := guild.get_role(role_id))]
-        logging: discord.TextChannel | None = guild.get_channel(record["logging"]) if record["logging"] else None  # type: ignore
+        logging: Optional[discord.TextChannel] = guild.get_channel(record["logging"]) if record["logging"] else None  # type: ignore
 
         return cls(
             bot,
@@ -117,7 +118,7 @@ class GuildDonationConfig:
     async def update(
         self,
         key: str,
-        value: str | discord.TextChannel | dict[int, discord.Role] | list[discord.Role],
+        value: Union[str, discord.TextChannel, dict[int, discord.Role], list[discord.Role]],
     ) -> None:
         """
         Update a specific attribute of the GuildDonationConfig.
@@ -168,7 +169,7 @@ class GuildDonationConfig:
             role_ids = [role.id for role in value]
             await self._update_config(key, role_ids)
 
-    async def _update_config(self, key: str, value: str | int | list[int] | dict[int, int]) -> None:
+    async def _update_config(self, key: str, value: Union[str, int, list[int], dict[int, int]]) -> None:
         await self.bot.pool.execute(
             f"UPDATE donation_configs SET {key} = $1 WHERE guild = $2 AND category = $3",
             value,

@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 import traceback
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Optional
 
 import aiohttp
 import asyncpg
@@ -149,7 +149,7 @@ class GiftifyHelper:
 
         return config
 
-    def get_donation_config(self, guild: discord.Guild, category: str) -> GuildDonationConfig | None:
+    def get_donation_config(self, guild: discord.Guild, category: str) -> Optional[GuildDonationConfig]:
         """Finds the donation config of a guild for some category.
 
         Parameters
@@ -183,7 +183,7 @@ class GiftifyHelper:
         """
         return [config.category for config in self.donation_configs if config.guild == guild]
 
-    async def fetch_raffle(self, guild: discord.Guild, name: str) -> Raffle | None:
+    async def fetch_raffle(self, guild: discord.Guild, name: str) -> Optional[Raffle]:
         """Finds a raffle in some guild.
 
         Parameters
@@ -226,7 +226,7 @@ class GiftifyHelper:
 
         return raffles
 
-    async def fetch_giveaway(self, *, guild_id: int, channel_id: int, message_id: int) -> Giveaway | None:
+    async def fetch_giveaway(self, *, guild_id: int, channel_id: int, message_id: int) -> Optional[Giveaway]:
         """Looks up a for a giveaway object in database.
 
         Parameters
@@ -260,7 +260,7 @@ class GiftifyHelper:
 
             return giveaway
 
-    async def running_giveaways(self, *, guild_id: int | None = None, sort_by_ends: bool = True) -> list[Giveaway]:
+    async def running_giveaways(self, *, guild_id: Optional[int] = None, sort_by_ends: bool = True) -> list[Giveaway]:
         """Looks up a list of active giveaways in the database.
 
         Parameters
@@ -336,7 +336,7 @@ class GiftifyHelper:
         success_message: str,
         cancel_message: str,
         timeout: float = 60.0,
-    ) -> bool | None:
+    ) -> Optional[bool]:
         """An interactive reaction confirmation dialog.
 
         Parameters
@@ -375,7 +375,7 @@ class Giftify(GiftifyHelper, commands.AutoShardedBot):
     user: discord.ClientUser
 
     colour: int = 0xCB3045
-    __version_info__ = "1.2.0"
+    __version_info__ = "1.2.1"
 
     def __init__(
         self,
@@ -467,7 +467,7 @@ class Giftify(GiftifyHelper, commands.AutoShardedBot):
         self.bot_app_info = await self.application_info()
         self.owner_ids = OWNER_IDS
 
-    async def get_or_fetch_user(self, user_id: int) -> discord.User | None:
+    async def get_or_fetch_user(self, user_id: int) -> Optional[discord.User]:
         """Looks up a user in cache or fetches if not found.
 
         Parameters
@@ -492,7 +492,7 @@ class Giftify(GiftifyHelper, commands.AutoShardedBot):
         else:
             return user
 
-    async def get_or_fetch_member(self, guild: discord.Guild, member_id: int) -> discord.Member | None:
+    async def get_or_fetch_member(self, guild: discord.Guild, member_id: int) -> Optional[discord.Member]:
         """Looks up a member in cache or fetches if not found.
 
         Parameters
