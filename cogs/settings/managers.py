@@ -2,7 +2,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from utils.tree import Interaction
+from core.tree import Interaction
 
 
 class GiveawayManagers(commands.GroupCog):
@@ -60,7 +60,7 @@ class GiveawayManagers(commands.GroupCog):
         config = await interaction.client.fetch_config(interaction.guild)
 
         managers = config.managers
-        if not role in managers:
+        if role not in managers:
             return await interaction.client.send(
                 interaction, "That role is not set as a manager role.", reason="warn"
             )

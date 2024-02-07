@@ -5,17 +5,17 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from bot import Giftify
+from core.bot import Giftify
+from core.tree import Interaction
 from utils.constants import GIFT_EMOJI
 from utils.paginator import BaseButtonPaginator
-from utils.tree import Interaction
 
 
 class ManagersPaginator(BaseButtonPaginator[int]):
     async def format_page(self, managers: List[asyncpg.Record], /) -> discord.Embed:
         assert self.bot is not None
 
-        description = f"The top giveaway managers of this server are:\n\n"
+        description = "The top giveaway managers of this server are:\n\n"
 
         for i, record in enumerate(managers):
             description += f"`{i + 1}.` <@!{record['host']}> - **{record['count']}** giveaway(s) hosted!\n"

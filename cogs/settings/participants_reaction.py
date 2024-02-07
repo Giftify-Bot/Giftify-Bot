@@ -3,8 +3,8 @@ from discord import app_commands
 from discord.app_commands import Transform
 from discord.ext import commands
 
+from core.tree import Interaction
 from utils.transformers import EmojiTransformer
-from utils.tree import Interaction
 
 
 class GiveawayParticipantsReaction(commands.GroupCog):

@@ -9,15 +9,15 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 import asyncpg
 import discord
 
+from core.tree import Interaction
 from models.giveaway_settings import ChannelConfig, GuildConfig
 from utils.constants import GIFT_EMOJI
 from utils.exceptions import GiveawayError
 from utils.functions import bold, safe_format
-from utils.tree import Interaction
 from utils.view import BaseView, GiveawayView
 
 if TYPE_CHECKING:
-    from bot import Giftify
+    from core.bot import Giftify
 
 
 class Giveaway:

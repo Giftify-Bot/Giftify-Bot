@@ -1,6 +1,6 @@
 from discord import app_commands
 
-from bot import Giftify
+from core.bot import Giftify
 
 from .raffle import RaffleBase
 from .raffle_deputy import RaffleDeputy

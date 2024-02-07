@@ -3,10 +3,10 @@ from discord import app_commands
 from discord.app_commands import Transform
 from discord.ext import commands
 
-from bot import Giftify
+from core.bot import Giftify
+from core.tree import Interaction
 from models.giveaways import GiveawayAction
 from utils.transformers import MessageTransformer
-from utils.tree import Interaction
 
 
 class GiveawayCancel(commands.GroupCog):

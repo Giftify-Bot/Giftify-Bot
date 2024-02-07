@@ -1,22 +1,21 @@
 from typing import List
 
-import asyncpg
 import discord
 from discord import app_commands
 from discord.ext import commands
 
-from bot import Giftify
+from core.bot import Giftify
+from core.tree import Interaction
 from models.giveaways import Giveaway
 from utils.constants import CROWN_EMOJI, GIFT_EMOJI, TIMER_EMOJI, TROPHY_EMOJI
 from utils.paginator import BaseButtonPaginator
-from utils.tree import Interaction
 
 
 class GiveawaysPaginator(BaseButtonPaginator[Giveaway]):
     async def format_page(self, giveaways: List[Giveaway], /) -> discord.Embed:
         assert self.bot is not None
 
-        embed = discord.Embed(title=f"Giveaway", colour=self.bot.colour)
+        embed = discord.Embed(title="Giveaway", colour=self.bot.colour)
 
         giveaway = giveaways[0]
         host = await self.bot.get_or_fetch_user(giveaway.host_id)

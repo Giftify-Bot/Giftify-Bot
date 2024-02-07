@@ -3,10 +3,10 @@ from discord import app_commands
 from discord.app_commands import Range, Transform
 from discord.ext import commands
 
-from bot import Giftify
+from core.bot import Giftify
+from core.tree import Interaction
 from models.donation_settings import GuildDonationConfig
 from utils.transformers import DonationCategoryTransformer
-from utils.tree import Interaction
 
 
 class DonationSettings(commands.GroupCog):

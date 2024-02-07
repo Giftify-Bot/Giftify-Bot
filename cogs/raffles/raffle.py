@@ -5,12 +5,12 @@ from discord import app_commands
 from discord.app_commands import Range, Transform
 from discord.ext import commands
 
-from bot import Giftify
+from core.bot import Giftify
+from core.tree import Interaction
 from models.raffles import Raffle
 from utils.constants import GIVEAWAY_EMOJI, MONEY_EMOJI
 from utils.paginator import BaseButtonPaginator
 from utils.transformers import MentionablesTransformer, RaffleTransformer
-from utils.tree import Interaction
 
 
 class RafflesPaginator(BaseButtonPaginator[Raffle]):

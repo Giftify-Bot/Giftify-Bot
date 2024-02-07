@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Dict, List, Optional, Tuple, Union
 
 import asyncpg
 import discord
 
-from bot import Giftify
+from core.bot import Giftify
 
-__all__: Tuple[str, ...] = ("GuildDonationConfig", "DonationAction")
+__all__: tuple[str, ...] = ("GuildDonationConfig", "DonationAction")
 
 
 class DonationAction(Enum):
@@ -46,7 +45,7 @@ class GuildDonationConfig:
         An optional `discord.TextChannel` object used for logging donation events.
     """
 
-    __slots__: Tuple[str, ...] = (
+    __slots__: tuple[str, ...] = (
         "bot",
         "guild",
         "category",
@@ -63,10 +62,10 @@ class GuildDonationConfig:
         guild: discord.Guild,
         category: str,
         symbol: str,
-        roles: Dict[int, discord.Role],
-        managers: List[discord.Role],
-        logging: Optional[discord.TextChannel] = None,
-    ):
+        roles: dict[int, discord.Role],
+        managers: list[discord.Role],
+        logging: discord.TextChannel | None = None,
+    ) -> None:
         self.bot = bot
         self.guild = guild
         self.category = category
@@ -75,16 +74,14 @@ class GuildDonationConfig:
         self.managers = managers
         self.logging = logging
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.category
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<GuildDonationConfig guild={self.guild!r}> category={self.category}"
 
     @classmethod
-    async def create(
-        cls, guild_id: int, category: str, bot: Giftify, *, symbol: Optional[str] = None
-    ) -> "GuildDonationConfig":
+    async def create(cls, guild_id: int, category: str, bot: Giftify, *, symbol: str | None = None) -> GuildDonationConfig:
         record = await bot.pool.fetchrow(
             "INSERT INTO donation_configs (guild, category, symbol) VALUES ($1, $2, $3) RETURNING *",
             guild_id,
@@ -96,28 +93,16 @@ class GuildDonationConfig:
         return instance
 
     @classmethod
-    async def from_record(
-        cls, bot: Giftify, *, record: asyncpg.Record
-    ) -> Optional["GuildDonationConfig"]:
+    async def from_record(cls, bot: Giftify, *, record: asyncpg.Record) -> GuildDonationConfig | None:
         guild = bot.get_guild(record["guild"])
         if not guild:
             return None
 
         category = record["category"]
         symbol = record["symbol"]
-        roles = {}
-        managers = []
-        logging: Optional[discord.TextChannel] = (
-            guild.get_channel(record["logging"]) if record["logging"] else None
-        )  # type: ignore
-
-        for amount, role_id in record["roles"].items():
-            if role := guild.get_role(role_id):
-                roles[int(amount)] = role
-
-        for role_id in record["managers"]:
-            if role := guild.get_role(role_id):
-                managers.append(role)
+        roles = {int(amount): role for amount, role_id in record["roles"].items() if (role := guild.get_role(role_id))}
+        managers = [role for role_id in record["managers"] if (role := guild.get_role(role_id))]
+        logging: discord.TextChannel | None = guild.get_channel(record["logging"]) if record["logging"] else None  # type: ignore
 
         return cls(
             bot,
@@ -132,9 +117,7 @@ class GuildDonationConfig:
     async def update(
         self,
         key: str,
-        value: Union[
-            str, discord.TextChannel, Dict[int, discord.Role], List[discord.Role]
-        ],
+        value: str | discord.TextChannel | dict[int, discord.Role] | list[discord.Role],
     ) -> None:
         """
         Update a specific attribute of the GuildDonationConfig.
@@ -156,36 +139,36 @@ class GuildDonationConfig:
         -------
         None
         """
-        if key not in ["category", "symbol", "logging", "roles", "managers"]:
-            raise ValueError(
-                "Invalid key provided. Valid keys are 'category', 'symbol', 'logging', 'roles', and 'managers'."
-            )
+        if key not in {"category", "symbol", "logging", "roles", "managers"}:
+            msg = "Invalid key provided. Valid keys are 'category', 'symbol', 'logging', 'roles', and 'managers'."
+            raise ValueError(msg)
 
-        if key in ["category", "symbol"]:
+        if key in {"category", "symbol"}:
             await self._update_config(key, str(value))
             setattr(self, key, value)
         elif key == "logging":
             if not isinstance(value, discord.TextChannel):
-                raise ValueError("Value for 'logging' must be a discord.TextChannel.")
+                msg = "Value for 'logging' must be a discord.TextChannel."
+                raise ValueError(msg)
             self.logging = value
 
             await self._update_config(key, value.id)
         elif key == "roles":
             if not isinstance(value, dict):
-                raise ValueError("Value for 'roles' must be a dictionary.")
+                msg = "Value for 'roles' must be a dictionary."
+                raise ValueError(msg)
             self.roles = value
             role_values = {amount: role.id for amount, role in value.items()}
             await self._update_config(key, role_values)
         elif key == "managers":
             if not isinstance(value, list):
-                raise ValueError("Value for 'managers' must be a list.")
+                msg = "Value for 'managers' must be a list."
+                raise ValueError(msg)
             self.managers = value
             role_ids = [role.id for role in value]
             await self._update_config(key, role_ids)
 
-    async def _update_config(
-        self, key: str, value: Union[str, int, List[int], Dict[int, int]]
-    ) -> None:
+    async def _update_config(self, key: str, value: str | int | list[int] | dict[int, int]) -> None:
         await self.bot.pool.execute(
             f"UPDATE donation_configs SET {key} = $1 WHERE guild = $2 AND category = $3",
             value,
@@ -193,14 +176,14 @@ class GuildDonationConfig:
             self.category,
         )
 
-    async def delete(self):
+    async def delete(self) -> None:
         await self.bot.pool.execute(
             "DELETE FROM donation_configs WHERE guild = $1 AND category = $2",
             self.guild.id,
             self.category,
         )
 
-    async def reset(self):
+    async def reset(self) -> None:
         await self.bot.pool.execute(
             "DELETE FROM donations WHERE guild = $1 AND category = $2",
             self.guild.id,

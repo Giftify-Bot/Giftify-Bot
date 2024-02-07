@@ -3,6 +3,6 @@
 *.pyc
 __pycache__
 .vscode
-giftifyenv
-venv
+.venv
 .env
+.ruff_cache

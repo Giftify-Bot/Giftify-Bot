@@ -9,7 +9,7 @@ import discord
 from utils.exceptions import RaffleError
 
 if TYPE_CHECKING:
-    from bot import Giftify
+    from core.bot import Giftify
 
 
 T = TypeVar("T")

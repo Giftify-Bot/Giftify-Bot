@@ -3,7 +3,7 @@ from discord import app_commands
 from discord.app_commands import Range
 from discord.ext import commands
 
-from utils.tree import Interaction
+from core.tree import Interaction
 
 
 def is_valid_message(message: str) -> bool:

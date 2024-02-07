@@ -5,8 +5,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from core.tree import Interaction
 from utils.constants import ARROW_EMOJI, BLANK_SPACE, SETTINGS_EMOJI
-from utils.tree import Interaction
 
 
 class GiveawayChannelSettings(commands.GroupCog):
@@ -122,7 +122,7 @@ class GiveawayChannelSettings(commands.GroupCog):
         )
 
         required_roles = channel_config.required_roles
-        if not role in required_roles:
+        if role not in required_roles:
             return await interaction.client.send(
                 interaction,
                 f"That role is not set as a default requirement role for {channel.mention}.",
@@ -246,7 +246,7 @@ class GiveawayChannelSettings(commands.GroupCog):
         )
 
         blacklisted_roles = channel_config.blacklisted_roles
-        if not role in blacklisted_roles:
+        if role not in blacklisted_roles:
             return await interaction.client.send(
                 interaction,
                 f"That role is not set as a default blacklist role for {channel.mention}.",
@@ -369,7 +369,7 @@ class GiveawayChannelSettings(commands.GroupCog):
         )
 
         bypass_roles = channel_config.bypass_roles
-        if not role in bypass_roles:
+        if role not in bypass_roles:
             return await interaction.client.send(
                 interaction,
                 f"That role is not set as a default bypass role for {channel.mention}.",
