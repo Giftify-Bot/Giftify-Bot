@@ -76,14 +76,12 @@ class DonationsLeaderboardPaginator(BaseButtonPaginator[asyncpg.Record]):
 class DonationCheckSelect(discord.ui.Select):
     view: DonationCheckView
 
-    def __init__(self, categories: list[str], parent: DonationCommands) -> None:
-        options = [discord.SelectOption(label=category.title(), value=category) for category in categories]
+    def __init__(self) -> None:
+        options = [discord.SelectOption(label=category.title(), value=category) for category in self.view.categories]
         super().__init__(placeholder="Select a donation category.", options=options)
-        self.parent = parent
 
     async def callback(self, interaction: Interaction) -> None:
         assert interaction.guild is not None
-        assert isinstance(interaction.user, discord.Member)
 
         category = interaction.client.get_donation_config(interaction.guild, self.values[0])
         if category is None:
@@ -92,16 +90,26 @@ class DonationCheckSelect(discord.ui.Select):
                 ephemeral=True,
             )
 
-        embed = await self.parent.get_donation_embed(category, interaction.user)
+        embed = await self.view.parent.get_donation_embed(category, self.view.member)
 
         await interaction.response.edit_message(embed=embed, view=self.view)
 
 
 class DonationCheckView(BaseView):
-    def __init__(self, interaction: Interaction, categories: list[str], parent: DonationCommands) -> None:
+    def __init__(
+        self,
+        interaction: Interaction,
+        member: discord.Member,
+        categories: list[str],
+        parent: DonationCommands,
+    ) -> None:
         super().__init__()
         self.interaction = interaction
-        self.donation_check = DonationCheckSelect(categories, parent)
+        self.member = member
+        self.categories = categories
+        self.parent = parent
+
+        self.donation_check = DonationCheckSelect()
         self.add_item(self.donation_check)
 
     async def interaction_check(self, interaction: Interaction) -> bool:
@@ -419,7 +427,7 @@ class DonationCommands(commands.GroupCog):
         categories = self.bot.get_guild_donation_categories(interaction.guild)
 
         embed = await self.get_donation_embed(category, member)
-        view = DonationCheckView(interaction, categories, self)
+        view = DonationCheckView(interaction, member, categories, self)
 
         await interaction.response.send_message(embed=embed, view=view)
 

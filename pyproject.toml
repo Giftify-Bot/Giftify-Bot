@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "giftify-bot"
-version = "1.1.4"
+version = "1.2.3"
 description = "Easy to use giveaway bot for discord."
 authors = ["AmazingAkai <akai.is.amazing@gmail.com>"]
 license = "GPLv3"
