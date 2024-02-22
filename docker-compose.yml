@@ -3,8 +3,6 @@ services:
     container_name: giftify
     build:
       context: .
-    env_file:
-      - .env
     volumes:
       - ./logs/:/app/logs/:rw
     ports:
