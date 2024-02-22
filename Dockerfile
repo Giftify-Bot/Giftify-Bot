@@ -22,7 +22,7 @@ RUN python -m pip install poetry
 COPY poetry.lock pyproject.toml /app/
 
 # Install the project dependencies using poetry.
-RUN poetry install -n --no-dev --no-root
+RUN poetry install -n --no-dev --no-root -E uvloop
 
 # Copy the source code into the container.
 COPY . .
