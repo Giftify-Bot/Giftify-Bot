@@ -11,16 +11,16 @@ from core.tree import Interaction
 from models.donation_settings import GuildDonationConfig
 from models.raffles import Raffle
 from utils.exceptions import (
-    InvalidAmount,
-    InvalidChannelPassed,
-    InvalidColor,
+    InvalidAmountError,
+    InvalidChannelPassedError,
+    InvalidColorError,
     InvalidDonationCategoryError,
-    InvalidEmoji,
-    InvalidMentionablesPassed,
-    InvalidMessage,
-    InvalidRaffle,
-    InvalidRolesPassed,
-    InvalidTime,
+    InvalidEmojiError,
+    InvalidMentionablesPassedError,
+    InvalidMessageError,
+    InvalidRaffleError,
+    InvalidRolesPassedError,
+    InvalidTimeError,
 )
 
 TIME_REGEX = re.compile(r"(\d{1,5}(?:[.,]?\d{1,5})?)([smhd])")
@@ -44,9 +44,7 @@ __all___: Tuple[str, ...] = (
 
 
 class RolesTransformer(app_commands.Transformer):
-    async def transform(
-        self, interaction: Interaction, value: str
-    ) -> List[discord.Role]:
+    async def transform(self, interaction: Interaction, value: str) -> List[discord.Role]:
         roles_string = value.split()
         roles: List[discord.Role] = []
 
@@ -56,20 +54,18 @@ class RolesTransformer(app_commands.Transformer):
             try:
                 role = await commands.RoleConverter().convert(ctx, role_string.strip())
             except commands.RoleNotFound:
-                raise InvalidRolesPassed(f"{role_string!r} is not a valid role.")
+                raise InvalidRolesPassedError(f"{role_string!r} is not a valid role.")
 
             else:
                 if role_string == "@everyone":
-                    raise InvalidRolesPassed(f"{role_string!r} is not a valid role.")
+                    raise InvalidRolesPassedError(f"{role_string!r} is not a valid role.")
                 roles.append(role)
 
         return roles[:5]
 
 
 class MentionablesTransformer(app_commands.Transformer):
-    async def transform(
-        self, interaction: Interaction, value: str
-    ) -> List[Union[discord.Member, discord.Role]]:
+    async def transform(self, interaction: Interaction, value: str) -> List[Union[discord.Member, discord.Role]]:
         mentionables: List[Union[discord.Member, discord.Role]] = []
 
         ctx = await commands.Context.from_interaction(interaction)
@@ -77,27 +73,19 @@ class MentionablesTransformer(app_commands.Transformer):
         for mentionable_string in value.split():
             # Better way is to use commands.run_converters but we can't use it here.
             try:
-                mentionable = await commands.RoleConverter().convert(
-                    ctx, mentionable_string.strip()
-                )
+                mentionable = await commands.RoleConverter().convert(ctx, mentionable_string.strip())
             except commands.RoleNotFound:
                 pass
             else:
                 if mentionable_string == "@everyone":
-                    raise InvalidRolesPassed(
-                        f"{mentionable_string!r} is not a valid member or role."
-                    )
+                    raise InvalidRolesPassedError(f"{mentionable_string!r} is not a valid member or role.")
                 mentionables.append(mentionable)
                 continue
 
             try:
-                mentionable = await commands.MemberConverter().convert(
-                    ctx, mentionable_string.strip()
-                )
+                mentionable = await commands.MemberConverter().convert(ctx, mentionable_string.strip())
             except commands.MemberNotFound:
-                raise InvalidMentionablesPassed(
-                    f"{mentionable_string!r} is not a valid member or role."
-                )
+                raise InvalidMentionablesPassedError(f"{mentionable_string!r} is not a valid member or role.")
 
             mentionables.append(mentionable)
 
@@ -105,9 +93,7 @@ class MentionablesTransformer(app_commands.Transformer):
 
 
 class BonusRolesTransformer(app_commands.Transformer):
-    async def transform(
-        self, interaction: Interaction, value: str
-    ) -> Dict[discord.Role, int]:
+    async def transform(self, interaction: Interaction, value: str) -> Dict[discord.Role, int]:
         roles_string = value.split()
         roles: Dict[discord.Role, int] = {}
 
@@ -115,43 +101,37 @@ class BonusRolesTransformer(app_commands.Transformer):
 
         for multiplier_roles_role_string in roles_string:
             if ":" not in multiplier_roles_role_string:
-                raise InvalidRolesPassed(
-                    "You must use `:` to split the role and bonus entries."
-                )
+                raise InvalidRolesPassedError("You must use `:` to split the role and bonus entries.")
             try:
                 (
                     role_string,
                     multiplier_roles_entries,
                 ) = multiplier_roles_role_string.split(":")
             except ValueError:
-                raise InvalidRolesPassed("Too many `:` found, expected only 1.")
+                raise InvalidRolesPassedError("Too many `:` found, expected only 1.")
             try:
                 role = await commands.RoleConverter().convert(ctx, role_string.strip())
             except commands.RoleNotFound:
-                raise InvalidRolesPassed(f"{role_string!r} is not a valid role.")
+                raise InvalidRolesPassedError(f"{role_string!r} is not a valid role.")
             try:
                 multiplier_roles_entries = int(multiplier_roles_entries)
             except ValueError:
-                raise InvalidRolesPassed(
+                raise InvalidRolesPassedError(
                     f"{multiplier_roles_entries!r} is not a valid number of bonus entries for {role_string}"
                 )
 
             if multiplier_roles_entries > 5:
-                raise InvalidRolesPassed(
-                    "A role cannot have more than 5 bonus entries."
-                )
+                raise InvalidRolesPassedError("A role cannot have more than 5 bonus entries.")
             else:
                 if role_string == "@everyone":
-                    raise InvalidRolesPassed(f"{role_string!r} is not a valid role.")
+                    raise InvalidRolesPassedError(f"{role_string!r} is not a valid role.")
                 roles[role] = multiplier_roles_entries
 
         return roles
 
 
 class TextChannelsTransformer(app_commands.Transformer):
-    async def transform(
-        self, interaction: Interaction, value: str
-    ) -> List[discord.TextChannel]:
+    async def transform(self, interaction: Interaction, value: str) -> List[discord.TextChannel]:
         channels_string = value.split()
         channels: List[discord.TextChannel] = []
 
@@ -159,13 +139,9 @@ class TextChannelsTransformer(app_commands.Transformer):
 
         for channel_string in channels_string:
             try:
-                role = await commands.TextChannelConverter().convert(
-                    ctx, channel_string.strip()
-                )
+                role = await commands.TextChannelConverter().convert(ctx, channel_string.strip())
             except commands.RoleNotFound:
-                raise InvalidChannelPassed(
-                    f"{channel_string!r} is not a valid channel."
-                )
+                raise InvalidChannelPassedError(f"{channel_string!r} is not a valid channel.")
 
             else:
                 channels.append(role)
@@ -174,9 +150,7 @@ class TextChannelsTransformer(app_commands.Transformer):
 
 
 class TimeTransformer(app_commands.Transformer):
-    async def transform(
-        self, interaction: Interaction, argument: str
-    ) -> datetime.datetime:
+    async def transform(self, interaction: Interaction, argument: str) -> datetime.datetime:
         matches = TIME_REGEX.findall(argument.lower())
         delta = datetime.timedelta()
 
@@ -185,7 +159,7 @@ class TimeTransformer(app_commands.Transformer):
                 seconds = TIME_DICT[unit] * float(value)
                 delta += datetime.timedelta(seconds=seconds)
             except KeyError:
-                raise InvalidTime(
+                raise InvalidTimeError(
                     (
                         f"Invalid time unit {unit!r}. "
                         f"Please provide a valid time unit such as 'h' for hours, 'm' for minutes, 's' for seconds, or 'd' for days. "
@@ -193,14 +167,12 @@ class TimeTransformer(app_commands.Transformer):
                     ),
                 )
             except ValueError:
-                raise InvalidTime(
+                raise InvalidTimeError(
                     f"Invalid value {value!r} provided. Please provide a valid number.",
                 )
 
-        if (
-            delta.total_seconds() < 10 or delta.total_seconds() > 1209600
-        ):  # 10 seconds and 2 weeks in seconds
-            raise InvalidTime(
+        if delta.total_seconds() < 10 or delta.total_seconds() > 1209600:  # 10 seconds and 2 weeks in seconds
+            raise InvalidTimeError(
                 "The time duration must be greater than 10 seconds and less than 2 weeks.",
             )
 
@@ -218,23 +190,21 @@ class AmountTransformer(app_commands.Transformer):
             multiplier_roles = AMOUNT_DICT.get(suffix, 1)
             result = int(value * multiplier_roles)
             if result > 100_000_000_000_000:
-                raise InvalidAmount("Invalid amount. The number is too big.")
+                raise InvalidAmountError("Invalid amount. The number is too big.")
             return result
         elif argument.isdigit():
             result = int(argument)
             if result > 100_000_000_000_000:
-                raise InvalidAmount("Invalid amount. The number is too big.")
+                raise InvalidAmountError("Invalid amount. The number is too big.")
             return result
         else:
             try:
                 result = int(float(argument))
                 if result > 100_000_000_000_000:
-                    raise InvalidAmount("Invalid amount. The number is too big.")
+                    raise InvalidAmountError("Invalid amount. The number is too big.")
                 return result
             except ValueError:
-                raise InvalidAmount(
-                    "Invalid amount format. Please provide a valid numerical value."
-                )
+                raise InvalidAmountError("Invalid amount format. Please provide a valid numerical value.")
 
 
 class EmojiTransformer(app_commands.Transformer):
@@ -244,7 +214,7 @@ class EmojiTransformer(app_commands.Transformer):
 
         emote = discord.PartialEmoji.from_str(argument)
         if not emote.id:
-            raise InvalidEmoji(f"{argument!r} is not a valid emoji.")
+            raise InvalidEmojiError(f"{argument!r} is not a valid emoji.")
 
         return str(emote)
 
@@ -255,34 +225,28 @@ class ColourTransformer(app_commands.Transformer):
             color = discord.Colour.from_str(argument)
             return int(color)
         except ValueError:
-            raise InvalidColor(
+            raise InvalidColorError(
                 "The given colour is not a valid hexadecimal value.",
             )
 
 
 class MessageTransformer(app_commands.Transformer):
-    async def transform(
-        self, interaction: Interaction, argument: str
-    ) -> discord.PartialMessage:
+    async def transform(self, interaction: Interaction, argument: str) -> discord.PartialMessage:
         ctx = await commands.Context.from_interaction(interaction)
 
         try:
             message = await commands.PartialMessageConverter().convert(ctx, argument)
         except commands.BadArgument as error:
-            raise InvalidMessage(str(error))
+            raise InvalidMessageError(str(error))
         else:
             if message.guild is None:
-                raise InvalidMessage(
-                    "The message must belong to a server, not private channels."
-                )
+                raise InvalidMessageError("The message must belong to a server, not private channels.")
             else:
                 return message
 
 
 class DonationCategoryTransformer(app_commands.Transformer):
-    async def transform(
-        self, interaction: Interaction, value: str
-    ) -> GuildDonationConfig:
+    async def transform(self, interaction: Interaction, value: str) -> GuildDonationConfig:
         assert interaction.guild is not None
 
         config = interaction.client.get_donation_config(interaction.guild, value)
@@ -302,9 +266,7 @@ class DonationCategoryTransformer(app_commands.Transformer):
 
         return [
             app_commands.Choice(name=category, value=category)
-            for category in interaction.client.get_guild_donation_categories(
-                interaction.guild
-            )
+            for category in interaction.client.get_guild_donation_categories(interaction.guild)
             if current.lower() in category.lower()
         ]
 
@@ -315,7 +277,7 @@ class RaffleTransformer(app_commands.Transformer):
 
         raffle = await interaction.client.fetch_raffle(interaction.guild, value)
         if not raffle:
-            raise InvalidRaffle(
+            raise InvalidRaffleError(
                 f"The raffle of name {value} does not exist!",
             )
 

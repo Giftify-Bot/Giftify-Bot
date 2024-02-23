@@ -42,15 +42,13 @@ class Meta(commands.Cog):
         if self.bot.owner_ids:
             for owner_id in self.bot.owner_ids:
                 if owner := await self.bot.get_or_fetch_user(owner_id):
-                    owner_names.append(
-                        f"{ARROW_EMOJI} **[{owner.display_name}](https://discord.com/users/{owner.id})**"
-                    )
+                    owner_names.append(f"{ARROW_EMOJI} **[{owner.display_name}](https://discord.com/users/{owner.id})**")
         return owner_names
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 3, key=lambda i: (i.guild_id, i.user.id))
     @app_commands.guild_only()
-    async def help(self, interaction: Interaction):
+    async def help(self, interaction: Interaction) -> None:
         """Retrieve information and assistance for Giftify."""
 
         await interaction.response.defer()
@@ -83,7 +81,7 @@ class Meta(commands.Cog):
     @app_commands.command()
     @app_commands.checks.cooldown(1, 3, key=lambda i: (i.guild_id, i.user.id))
     @app_commands.guild_only()
-    async def ping(self, interaction: Interaction):
+    async def ping(self, interaction: Interaction) -> None:
         """Check the latency of the bot."""
         start_time = time.monotonic()
 
@@ -97,9 +95,7 @@ class Meta(commands.Cog):
         database_end_time = time.monotonic()
         database_latency = round((database_end_time - database_start_time) * 1000)
 
-        embed = discord.Embed(
-            title="Ping Information", timestamp=datetime.datetime.now()
-        )
+        embed = discord.Embed(title="Ping Information", timestamp=datetime.datetime.now())
 
         if client_latency < 200 and api_latency < 100 and database_latency < 100:
             embed.color = discord.Color.green()
@@ -133,7 +129,7 @@ class Meta(commands.Cog):
     @app_commands.command()
     @app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild_id, i.user.id))
     @app_commands.guild_only()
-    async def stats(self, interaction: Interaction):
+    async def stats(self, interaction: Interaction) -> None:
         """Displays statistics and information about Giftify."""
 
         assert interaction.guild is not None
@@ -147,9 +143,7 @@ class Meta(commands.Cog):
         owner_names = await self.owners()
 
         embed = discord.Embed(title="Giftify - Statistics", color=discord.Color.green())
-        embed.add_field(
-            name=f"{DEVELOPER_EMOJI} Owners", value="\n".join(owner_names), inline=False
-        )
+        embed.add_field(name=f"{DEVELOPER_EMOJI} Owners", value="\n".join(owner_names), inline=False)
 
         system = (
             "```ansi\n"
@@ -201,15 +195,13 @@ class Meta(commands.Cog):
         )
 
         embed.set_thumbnail(url=self.bot.user.display_avatar)
-        embed.set_author(
-            name=interaction.user.display_name, icon_url=interaction.user.display_avatar
-        )
+        embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar)
         await interaction.followup.send(embed=embed)
 
     @app_commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
-    async def invite(self, interaction: Interaction):
+    async def invite(self, interaction: Interaction) -> None:
         """Invite the Bot to your server."""
         embed = discord.Embed(
             title="Invite the Bot 🤖",
@@ -228,7 +220,7 @@ class Meta(commands.Cog):
     @app_commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
-    async def source(self, interaction: Interaction):
+    async def source(self, interaction: Interaction) -> None:
         """View the source code of the bot."""
         embed = discord.Embed(
             title="Source 🤖",
@@ -247,7 +239,7 @@ class Meta(commands.Cog):
     @app_commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
-    async def support(self, interaction: Interaction):
+    async def support(self, interaction: Interaction) -> None:
         """Join the support server."""
         embed = discord.Embed(
             title="Support Server 🛠️",
@@ -266,7 +258,7 @@ class Meta(commands.Cog):
     @app_commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.guild_only()
-    async def vote(self, interaction: Interaction):
+    async def vote(self, interaction: Interaction) -> None:
         """Vote for the Bot on top.gg."""
         embed = discord.Embed(
             title="Vote for the Bot 🗳️",
@@ -283,5 +275,5 @@ class Meta(commands.Cog):
         await interaction.response.send_message(embed=embed, view=view)
 
 
-async def setup(bot: Giftify):
+async def setup(bot: Giftify) -> None:
     await bot.add_cog(Meta(bot))

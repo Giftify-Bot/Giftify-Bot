@@ -17,9 +17,7 @@ class GiveawayDefaults(commands.GroupCog):
     @defaults.command(name="add_requirement")
     @app_commands.describe(role="Mention a role or enter a role ID.")
     @app_commands.checks.cooldown(1, 15, key=lambda i: (i.guild, i.user.id))
-    async def defaults_add_requirement(
-        self, interaction: Interaction, role: discord.Role
-    ):
+    async def defaults_add_requirement(self, interaction: Interaction, role: discord.Role) -> None:
         """Add a default requirement role."""
         assert interaction.guild is not None
         if role.id == interaction.guild.id:
@@ -63,9 +61,7 @@ class GiveawayDefaults(commands.GroupCog):
     @defaults.command(name="remove_requirement")
     @app_commands.describe(role="Mention a role or enter a role ID.")
     @app_commands.checks.cooldown(1, 15, key=lambda i: (i.guild, i.user.id))
-    async def defaults_remove_requirement(
-        self, interaction: Interaction, role: discord.Role
-    ):
+    async def defaults_remove_requirement(self, interaction: Interaction, role: discord.Role) -> None:
         """Remove a default requirement role."""
 
         assert isinstance(interaction.user, discord.Member)
@@ -84,9 +80,7 @@ class GiveawayDefaults(commands.GroupCog):
         required_roles.remove(role)
         await config.update("required_roles", required_roles, interaction.client.pool)
 
-        message = (
-            f"Successfully removed {role.mention!r} from default requirement roles."
-        )
+        message = f"Successfully removed {role.mention!r} from default requirement roles."
 
         await interaction.client.send(
             interaction,
@@ -97,9 +91,7 @@ class GiveawayDefaults(commands.GroupCog):
     @defaults.command(name="add_blacklist")
     @app_commands.describe(role="Mention a role or enter a role ID.")
     @app_commands.checks.cooldown(1, 15, key=lambda i: (i.guild, i.user.id))
-    async def defaults_add_blacklist(
-        self, interaction: Interaction, role: discord.Role
-    ):
+    async def defaults_add_blacklist(self, interaction: Interaction, role: discord.Role) -> None:
         """Add a default blacklist role."""
         assert interaction.guild is not None
 
@@ -131,9 +123,7 @@ class GiveawayDefaults(commands.GroupCog):
             )
 
         blacklisted_roles.append(role)
-        await config.update(
-            "blacklisted_roles", blacklisted_roles, interaction.client.pool
-        )
+        await config.update("blacklisted_roles", blacklisted_roles, interaction.client.pool)
 
         message = f"Successfully added {role.mention!r} to default blacklist roles."
 
@@ -146,9 +136,7 @@ class GiveawayDefaults(commands.GroupCog):
     @defaults.command(name="remove_blacklist")
     @app_commands.describe(role="Mention a role or enter a role ID.")
     @app_commands.checks.cooldown(1, 15, key=lambda i: (i.guild, i.user.id))
-    async def defaults_remove_blacklist(
-        self, interaction: Interaction, role: discord.Role
-    ):
+    async def defaults_remove_blacklist(self, interaction: Interaction, role: discord.Role) -> None:
         """Remove a default blacklist role."""
 
         assert isinstance(interaction.user, discord.Member)
@@ -165,9 +153,7 @@ class GiveawayDefaults(commands.GroupCog):
                 reason="warn",
             )
         blacklisted_roles.remove(role)
-        await config.update(
-            "blacklisted_roles", blacklisted_roles, interaction.client.pool
-        )
+        await config.update("blacklisted_roles", blacklisted_roles, interaction.client.pool)
 
         message = f"Successfully removed {role.mention!r} from default blacklist roles."
 
@@ -180,9 +166,7 @@ class GiveawayDefaults(commands.GroupCog):
     @defaults.command(name="add_bypass_roles")
     @app_commands.describe(role="Mention a role or enter a role ID.")
     @app_commands.checks.cooldown(1, 15, key=lambda i: (i.guild, i.user.id))
-    async def defaults_add_bypass_roles(
-        self, interaction: Interaction, role: discord.Role
-    ):
+    async def defaults_add_bypass_roles(self, interaction: Interaction, role: discord.Role) -> None:
         """Add a default bypass role."""
         assert interaction.guild is not None
         if role.id == interaction.guild.id:
@@ -226,9 +210,7 @@ class GiveawayDefaults(commands.GroupCog):
     @defaults.command(name="remove_bypass_roles")
     @app_commands.describe(role="Mention a role or enter a role ID.")
     @app_commands.checks.cooldown(1, 15, key=lambda i: (i.guild, i.user.id))
-    async def defaults_remove_bypass_roles(
-        self, interaction: Interaction, role: discord.Role
-    ):
+    async def defaults_remove_bypass_roles(self, interaction: Interaction, role: discord.Role) -> None:
         """Remove a default bypass role."""
 
         assert isinstance(interaction.user, discord.Member)
@@ -266,7 +248,7 @@ class GiveawayDefaults(commands.GroupCog):
         interaction: Interaction,
         role: discord.Role,
         entries: app_commands.Range[int, 1, 5],
-    ):
+    ) -> None:
         """Edit multiplier entries of a role."""
         assert interaction.guild is not None
         if role.id == interaction.guild.id:
@@ -300,13 +282,9 @@ class GiveawayDefaults(commands.GroupCog):
                 )
         else:
             multiplier_roles[role] = entries
-        await config.update(
-            "multiplier_roles", multiplier_roles, interaction.client.pool
-        )
+        await config.update("multiplier_roles", multiplier_roles, interaction.client.pool)
 
-        message = (
-            f"Successfully set {role.mention}'s multiplier entries to `{entries}`."
-        )
+        message = f"Successfully set {role.mention}'s multiplier entries to `{entries}`."
 
         await interaction.client.send(
             interaction,

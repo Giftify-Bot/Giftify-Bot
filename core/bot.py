@@ -3,8 +3,6 @@ from __future__ import annotations
 import datetime
 import logging
 import os
-import sys
-import traceback
 from typing import TYPE_CHECKING, ClassVar, Optional
 
 import aiohttp
@@ -392,7 +390,6 @@ class Giftify(GiftifyHelper, commands.AutoShardedBot):
 
         intents = discord.Intents(messages=True, emojis=True, guilds=True)
         allowed_mentions = discord.AllowedMentions(everyone=False, roles=False, users=True, replied_user=False)
-        member_cache_flags = discord.MemberCacheFlags.from_intents(intents=intents)
 
         sentry_sdk.init(
             dsn=os.environ["SENTRY_DSN"],
@@ -415,7 +412,6 @@ class Giftify(GiftifyHelper, commands.AutoShardedBot):
             chunk_guilds_at_startup=False,
             max_messages=None,
             activity=discord.CustomActivity(name="\N{LINK SYMBOL} https://giftifybot.vercel.app"),
-            member_cache_flags=member_cache_flags,
             owner_ids=OWNER_IDS,
         )
 
@@ -449,15 +445,9 @@ class Giftify(GiftifyHelper, commands.AutoShardedBot):
     async def on_resume(self) -> None:
         self.log_handler.log.info("%s got a resume event at %s", self.user.name, datetime.datetime.now())
 
-    async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
-        if isinstance(error, commands.CommandInvokeError):
-            origin_ = error.original
-            assert ctx.command is not None
-            if not isinstance(origin_, discord.HTTPException):
-                print(f"In {ctx.command.qualified_name}:", file=sys.stderr)
-                traceback.print_tb(origin_.__traceback__)
-                print(f"{origin_.__class__.__name__}: {origin_}", file=sys.stderr)
-                sentry_sdk.capture_exception(error)
+    async def on_command_error(self, _ctx: commands.Context, error: commands.CommandError) -> None:
+        if isinstance(error, commands.CommandInvokeError) and not isinstance(error.original, discord.HTTPException):
+            sentry_sdk.capture_exception(error)
 
     async def start(self) -> None:
         await super().start(token=os.environ["TOKEN"], reconnect=True)

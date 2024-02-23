@@ -1,4 +1,5 @@
 import datetime
+import logging
 from collections import ChainMap
 from typing import Dict, List, Optional
 
@@ -17,6 +18,8 @@ from utils.transformers import (
     TextChannelsTransformer,
     TimeTransformer,
 )
+
+log = logging.getLogger(__name__)
 
 
 class GiveawayStart(commands.GroupCog):
@@ -43,9 +46,7 @@ class GiveawayStart(commands.GroupCog):
         donor="The donating member for the giveaway.",
         message="The message to accompany the giveaway.",
     )
-    @app_commands.checks.bot_has_permissions(
-        embed_links=True, send_messages=True, view_channel=True, add_reactions=True
-    )
+    @app_commands.checks.bot_has_permissions(embed_links=True, send_messages=True, view_channel=True, add_reactions=True)
     @app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild, i.user.id))
     async def giveaway_start(
         self,
@@ -53,20 +54,12 @@ class GiveawayStart(commands.GroupCog):
         duration: Transform[datetime.datetime, TimeTransformer],
         winners: app_commands.Range[int, 1, 32],
         prize: app_commands.Range[str, 1, 255],
-        required_roles: Optional[
-            Transform[List[discord.Role], RolesTransformer]
-        ] = None,
-        blacklisted_roles: Optional[
-            Transform[List[discord.Role], RolesTransformer]
-        ] = None,
+        required_roles: Optional[Transform[List[discord.Role], RolesTransformer]] = None,
+        blacklisted_roles: Optional[Transform[List[discord.Role], RolesTransformer]] = None,
         bypass_roles: Optional[Transform[List[discord.Role], RolesTransformer]] = None,
-        multiplier_roles: Optional[
-            Transform[Dict[discord.Role, int], BonusRolesTransformer]
-        ] = None,
+        multiplier_roles: Optional[Transform[Dict[discord.Role, int], BonusRolesTransformer]] = None,
         messages_required: Optional[app_commands.Range[int, 1, 1000]] = None,
-        allowed_message_channels: Optional[
-            Transform[List[discord.TextChannel], TextChannelsTransformer]
-        ] = None,
+        allowed_message_channels: Optional[Transform[List[discord.TextChannel], TextChannelsTransformer]] = None,
         amari: Optional[app_commands.Range[int, 1, 1000]] = None,
         weekly_amari: Optional[app_commands.Range[int, 1, 1000]] = None,
         no_defaults: bool = False,
@@ -74,7 +67,7 @@ class GiveawayStart(commands.GroupCog):
         ping: bool = False,
         donor: Optional[discord.Member] = None,
         message: Optional[app_commands.Range[str, 1, 2000]] = None,
-    ):
+    ) -> None:
         """Initiate a giveaway within your server, allowing for optional entry requirements."""
         assert interaction.guild is not None
         assert isinstance(interaction.user, discord.Member)
@@ -93,9 +86,7 @@ class GiveawayStart(commands.GroupCog):
             interaction.channel, create_if_not_exists=False
         )
         category_config: Optional[ChannelConfig] = (
-            await config.get_channel_config(
-                channel=interaction.channel.category, create_if_not_exists=False
-            )
+            await config.get_channel_config(channel=interaction.channel.category, create_if_not_exists=False)
             if interaction.channel.category is not None
             else None
         )
@@ -143,7 +134,7 @@ class GiveawayStart(commands.GroupCog):
             multiplier_roles = dict(
                 ChainMap(
                     multiplier_roles or {},
-                    config.multiplier_roles,
+                    config.multiplier_roles or {},
                     channel_config.multiplier_roles if channel_config else {},
                     category_config.multiplier_roles if category_config else {},
                 )
@@ -182,8 +173,6 @@ class GiveawayStart(commands.GroupCog):
         if giveaway.messages_required and giveaway.messages_required > 0:
             self.bot.cached_giveaways.append(giveaway)
 
-        self.bot.dispatch(
-            "giveaway_action", GiveawayAction.START, giveaway, interaction.user
-        )
+        self.bot.dispatch("giveaway_action", GiveawayAction.START, giveaway, interaction.user)
 
         await interaction.client.send(interaction, "Successfully started the giveaway!")

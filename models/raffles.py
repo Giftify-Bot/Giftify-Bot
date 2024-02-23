@@ -1,47 +1,16 @@
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING, Dict, List, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import asyncpg
 import discord
 
 from utils.exceptions import RaffleError
+from utils.functions import MemberProxy, filter_none
 
 if TYPE_CHECKING:
     from core.bot import Giftify
-
-
-T = TypeVar("T")
-V = TypeVar("V")
-
-
-class FakeMember:
-    def __init__(self, id: int) -> None:
-        self.id = id
-
-    @property
-    def mention(self) -> str:
-        return f"<@{self.id}>"
-
-
-@overload
-def filter_none(obj: List[Optional[T]]) -> List[T]:
-    pass
-
-
-@overload
-def filter_none(obj: Dict[Optional[T], V]) -> Dict[T, V]:
-    pass
-
-
-def filter_none(obj):
-    if isinstance(obj, list):
-        return [item for item in obj if item is not None]
-    elif isinstance(obj, dict):
-        return {key: value for key, value in obj.items() if value is not None}
-
-    raise Exception("Invalid obj type.")
 
 
 class Raffle:
@@ -76,7 +45,7 @@ class Raffle:
         deputy_roles: List[discord.Role],
         deputy_members: List[discord.Member],
         tickets: Dict[discord.Member, int],
-    ):
+    ) -> None:
         self.pool = pool
 
         self.guild = guild
@@ -86,7 +55,7 @@ class Raffle:
         self.deputy_members = deputy_members
         self.tickets = tickets
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
     def __repr__(self) -> str:
@@ -103,20 +72,16 @@ class Raffle:
         name = record["name"]
         guild = bot.get_guild(record["guild"])
         if guild is None:
-            raise RaffleError("The guild having the raffle was not found.")
+            msg = "The guild having the raffle was not found."
+            raise RaffleError(msg)
 
         winner_id = record["winner"]
         winner: Optional[discord.Member] = (
-            (await bot.get_or_fetch_member(guild, winner_id) or FakeMember(winner_id))
-            if winner_id
-            else None
+            (await bot.get_or_fetch_member(guild, winner_id) or MemberProxy(winner_id)) if winner_id else None
         )  # type: ignore
 
         deputy_roles = [guild.get_role(role_id) for role_id in record["deputy_roles"]]
-        deputy_members = [
-            await bot.get_or_fetch_member(guild, member_id)
-            for member_id in record["deputy_members"]
-        ]
+        deputy_members = [await bot.get_or_fetch_member(guild, member_id) for member_id in record["deputy_members"]]
 
         tickets = {
             await bot.get_or_fetch_member(guild, int(member_id)): num_tickets
@@ -155,16 +120,20 @@ class Raffle:
         obj: Union[discord.Member, discord.Role]
             The instance of deputy member or role to be added.
         """
+
         if isinstance(obj, discord.Member):
             if len(self.deputy_members) >= 25:
-                raise RaffleError("You cannot add more than 25 deputy members.")
+                msg = "You cannot add more than 25 deputy members."
+                raise RaffleError(msg)
             self.deputy_members.append(obj)
         elif isinstance(obj, discord.Role):
             if len(self.deputy_roles) >= 10:
-                raise RaffleError("You cannot add more than 10 deputy roles.")
+                msg = "You cannot add more than 10 deputy roles."
+                raise RaffleError(msg)
             self.deputy_roles.append(obj)
         else:
-            raise RaffleError("Invalid obj type.")
+            msg = "Invalid obj type."
+            raise RaffleError(msg)
 
         await self.save()
 
@@ -179,14 +148,17 @@ class Raffle:
         """
         if isinstance(obj, discord.Member):
             if obj not in self.deputy_members:
-                raise RaffleError("That member is not a deputy.")
+                msg = "That member is not a deputy."
+                raise RaffleError(msg)
             self.deputy_members.remove(obj)
         elif isinstance(obj, discord.Role):
             if obj not in self.deputy_roles:
-                raise RaffleError("That role is not a deputy.")
+                msg = "That role is not a deputy."
+                raise RaffleError()
             self.deputy_roles.remove(obj)
         else:
-            raise RaffleError("Invalid obj type.")
+            msg = "Invalid obj type."
+            raise RaffleError(msg)
 
         await self.save()
 
@@ -226,9 +198,8 @@ class Raffle:
 
             await self.save()
         else:
-            raise RaffleError(
-                f"That member does not have any tickets in {self.name} raffle."
-            )
+            msg = f"That member does not have any tickets in {self.name} raffle."
+            raise RaffleError(msg)
 
     async def save(self) -> None:
         """
@@ -248,14 +219,10 @@ class Raffle:
             self.winner.id if self.winner else None,
             [role.id for role in self.deputy_roles if role is not None],
             [member.id for member in self.deputy_members if member is not None],
-            {
-                str(member.id): num_tickets
-                for member, num_tickets in self.tickets.items()
-                if member is not None
-            },
+            {str(member.id): num_tickets for member, num_tickets in self.tickets.items() if member is not None},
         )
 
-    async def delete(self):
+    async def delete(self) -> None:
         """
         Delete the  raffle from the database.
         """

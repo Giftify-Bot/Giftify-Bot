@@ -6,16 +6,16 @@ __all__: Tuple[str, ...] = (
     "TransformerError",
     "MaxChannelConfigCreationError",
     "GiveawayError",
-    "ButtonOnCooldown",
-    "InvalidRolesPassed",
-    "InvalidMentionablesPassed",
-    "InvalidTime",
-    "InvalidAmount",
-    "InvalidColor",
-    "InvalidMessage",
-    "InvalidRaffle",
-    "InvalidEmoji",
-    "InvalidChannelPassed",
+    "ButtonOnCooldownError",
+    "InvalidRolesPassedError",
+    "InvalidMentionablesPassedError",
+    "InvalidTimeError",
+    "InvalidAmountError",
+    "InvalidColorError",
+    "InvalidMessageError",
+    "InvalidRaffleError",
+    "InvalidEmojiError",
+    "InvalidChannelPassedError",
     "InvalidDonationCategoryError",
     "DonationError",
     "DonationPermissionsError",
@@ -39,44 +39,44 @@ class GiveawayError(Exception):
     """Error raised in a giveaway."""
 
 
-class ButtonOnCooldown(Exception):
-    def __init__(self, retry_after: float):
+class ButtonOnCooldownError(Exception):
+    def __init__(self, retry_after: float) -> None:
         self.retry_after = retry_after
 
 
-class InvalidRolesPassed(TransformerError):
+class InvalidRolesPassedError(TransformerError):
     pass
 
 
-class InvalidMentionablesPassed(TransformerError):
+class InvalidMentionablesPassedError(TransformerError):
     pass
 
 
-class InvalidTime(TransformerError):
+class InvalidTimeError(TransformerError):
     pass
 
 
-class InvalidAmount(TransformerError):
+class InvalidAmountError(TransformerError):
     pass
 
 
-class InvalidColor(TransformerError):
+class InvalidColorError(TransformerError):
     pass
 
 
-class InvalidMessage(TransformerError):
+class InvalidMessageError(TransformerError):
     pass
 
 
-class InvalidRaffle(TransformerError):
+class InvalidRaffleError(TransformerError):
     pass
 
 
-class InvalidEmoji(TransformerError):
+class InvalidEmojiError(TransformerError):
     pass
 
 
-class InvalidChannelPassed(TransformerError):
+class InvalidChannelPassedError(TransformerError):
     pass
 
 

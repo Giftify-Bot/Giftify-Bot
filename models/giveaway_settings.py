@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union, overload
 
 import asyncpg
 import discord
 
 from utils.exceptions import MaxChannelConfigCreationError
+
+log = logging.getLogger(__name__)
 
 __all__: Tuple[str, ...] = (
     "ChannelConfig",
@@ -120,17 +123,9 @@ class ChannelConfig:
         assert isinstance(channel, (discord.TextChannel, discord.CategoryChannel))
 
         data["ping"] = guild.get_role(data["ping"])
-        data["required_roles"] = [
-            guild.get_role(role) for role in data["required_roles"] if role is not None
-        ]
-        data["blacklisted_roles"] = [
-            guild.get_role(role)
-            for role in data["blacklisted_roles"]
-            if role is not None
-        ]
-        data["bypass_roles"] = [
-            guild.get_role(role) for role in data["bypass_roles"] if role is not None
-        ]
+        data["required_roles"] = [guild.get_role(role) for role in data["required_roles"] if role is not None]
+        data["blacklisted_roles"] = [guild.get_role(role) for role in data["blacklisted_roles"] if role is not None]
+        data["bypass_roles"] = [guild.get_role(role) for role in data["bypass_roles"] if role is not None]
         data["multiplier_roles"] = {
             guild.get_role(role): multiplier_roles
             for role, multiplier_roles in data["multiplier_roles"].items()
@@ -141,9 +136,7 @@ class ChannelConfig:
 
         return cls(channel, guild, **data)
 
-    async def update(
-        self, column: str, value: Any, pool: asyncpg.Pool
-    ) -> "ChannelConfig":
+    async def update(self, column: str, value: Any, pool: asyncpg.Pool) -> "ChannelConfig":
         """Update the specified column with the provided value in the database.
 
         Parameters
@@ -173,11 +166,7 @@ class ChannelConfig:
         if isinstance(value, list):
             value = [role.id for role in value if role is not None]
         elif isinstance(value, dict):
-            value = {
-                role.id: multiplier_roles
-                for role, multiplier_roles in value.items()
-                if role is not None
-            }
+            value = {role.id: multiplier_roles for role, multiplier_roles in value.items() if role is not None}
         elif isinstance(value, discord.Role):
             value = value.id
         else:
@@ -377,34 +366,20 @@ class GuildConfig:
 
         data["logging"] = guild.get_channel(data["logging"])
         data["ping"] = guild.get_role(data["ping"])
-        data["required_roles"] = [
-            guild.get_role(role) for role in data["required_roles"] if role is not None
-        ]
-        data["blacklisted_roles"] = [
-            guild.get_role(role)
-            for role in data["blacklisted_roles"]
-            if role is not None
-        ]
-        data["bypass_roles"] = [
-            guild.get_role(role) for role in data["bypass_roles"] if role is None
-        ]
+        data["required_roles"] = [guild.get_role(role) for role in data["required_roles"] if role is not None]
+        data["blacklisted_roles"] = [guild.get_role(role) for role in data["blacklisted_roles"] if role is not None]
+        data["bypass_roles"] = [guild.get_role(role) for role in data["bypass_roles"] if role is None]
         data["multiplier_roles"] = {
             guild.get_role(role): multiplier
             for role, multiplier in data["multiplier_roles"].items()
             if role is not None and multiplier > 1
         }
-        data["managers"] = [
-            guild.get_role(role) for role in data["managers"] if role is not None
-        ]
+        data["managers"] = [guild.get_role(role) for role in data["managers"] if role is not None]
 
-        data["button_style"] = discord.utils.get(
-            discord.ButtonStyle, value=data["button_style"]
-        )
+        data["button_style"] = discord.utils.get(discord.ButtonStyle, value=data["button_style"])
 
         data["channel_settings"] = [
-            channel_setting
-            for record in channel_data
-            if (channel_setting := ChannelConfig.from_data(guild, record))
+            channel_setting for record in channel_data if (channel_setting := ChannelConfig.from_data(guild, record))
         ]
 
         data.pop("guild")  # We do not need this.
@@ -418,17 +393,11 @@ class GuildConfig:
             guild=self.guild.id,
             reaction=self.reaction,
             participants_reaction=self.participants_reaction,
-            required_roles=[
-                role.id for role in self.required_roles if role is not None
-            ],
-            blacklisted_roles=[
-                role.id for role in self.blacklisted_roles if role is not None
-            ],
+            required_roles=[role.id for role in self.required_roles if role is not None],
+            blacklisted_roles=[role.id for role in self.blacklisted_roles if role is not None],
             bypass_roles=[role.id for role in self.bypass_roles if role is not None],
             multiplier_roles={
-                role.id: multiplier_roles
-                for role, multiplier_roles in self.multiplier_roles.items()
-                if role is not None
+                role.id: multiplier_roles for role, multiplier_roles in self.multiplier_roles.items() if role is not None
             },
             managers=[role.id for role in self.managers if role is not None],
             dm_winner=self.dm_winner,
@@ -466,18 +435,14 @@ class GuildConfig:
         """
 
         data = await pool.fetchrow("SELECT * FROM configs WHERE guild = $1", guild.id)
-        channel_data: List[asyncpg.Record] = await pool.fetch(
-            "SELECT * FROM channel_configs WHERE guild = $1", guild.id
-        )
+        channel_data: List[asyncpg.Record] = await pool.fetch("SELECT * FROM channel_configs WHERE guild = $1", guild.id)
 
         if not data:
             data: asyncpg.Record = await cls._create_config(guild.id, pool)
 
         return cls._from_data(guild, data, channel_data)
 
-    async def update(
-        self, column: str, value: Any, pool: asyncpg.Pool
-    ) -> "GuildConfig":
+    async def update(self, column: str, value: Any, pool: asyncpg.Pool) -> "GuildConfig":
         """Update the specified column with the provided value in the database.
 
         Parameters
@@ -507,15 +472,13 @@ class GuildConfig:
         data = self.to_dict()
 
         columns = ", ".join(data.keys())
-        placeholders = ", ".join([f"${i+1}" for i in range(len(data))])
-        update_clause = ", ".join(
-            [f"{key} = EXCLUDED.{key}" for key in data.keys() if key != "guild"]
-        )
+        placeholders = ", ".join([f"${i + 1}" for i in range(len(data))])
+        update_clause = ", ".join([f"{key} = EXCLUDED.{key}" for key in data if key != "guild"])
 
         query = f"""
-            INSERT INTO configs ({columns}) 
+            INSERT INTO configs ({columns})
             VALUES ({placeholders})
-            ON CONFLICT (guild) DO 
+            ON CONFLICT (guild) DO
             UPDATE SET {update_clause}
         """
 

@@ -14,6 +14,7 @@ from models.timers import Timer
 log = logging.getLogger("timers")
 
 
+# Source: https://github.com/Rapptz/RoboDanny/blob/rewrite/cogs/reminder.py
 class TimerManager(commands.Cog):
     """A cog for starting and managing simple timers internally."""
 
@@ -158,7 +159,7 @@ class TimerManager(commands.Cog):
             self._task.cancel()
             self._task = self.bot.loop.create_task(self.dispatch_timers())
 
-            log.error("An error was raised while dispatching timers:", exc_info=error)
+            log.exception("An error was raised while dispatching timers:", exc_info=error)
             sentry_sdk.capture_exception(error)
 
 

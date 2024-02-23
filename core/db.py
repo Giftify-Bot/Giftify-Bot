@@ -12,13 +12,15 @@ __all__ = ("db_init",)
 
 def _encode_jsonb(value: Any) -> str:
     if isinstance(value, dict):
-        value = {str(key): val for key, val in value.items() if isinstance(key, str)}
+        value = {str(key): val for key, val in value.items()}
     return orjson.dumps(value).decode("utf-8")
 
 
-
 def _decode_jsonb(value: str) -> Any:
-    return orjson.loads(value)
+    val = orjson.loads(value)
+    if isinstance(value, dict) and all(key.isdigit() for key in val):
+        return {int(k): v for k, v in val.items()}
+    return val
 
 
 async def db_init(connection: asyncpg.Connection) -> None:

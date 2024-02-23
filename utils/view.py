@@ -12,7 +12,7 @@ from utils.constants import (
     SUCCESS_EMOJI,
     WARN_EMOJI,
 )
-from utils.exceptions import ButtonOnCooldown, GiveawayError
+from utils.exceptions import ButtonOnCooldownError, GiveawayError
 from utils.paginator import BaseButtonPaginator
 
 if TYPE_CHECKING:
@@ -29,9 +29,7 @@ class BaseView(discord.ui.View):
     message: Optional[Union[discord.Message, discord.InteractionMessage]] = None
     author: Optional[Union[discord.Member, discord.User]] = None
 
-    async def on_error(
-        self, interaction: Interaction, error: Exception, item: discord.ui.Item
-    ) -> None:
+    async def on_error(self, interaction: Interaction, error: Exception, item: discord.ui.Item) -> None:
         if isinstance(error, GiveawayError):
             embed = discord.Embed(
                 title="An error was raised while executing this command!",
@@ -39,29 +37,23 @@ class BaseView(discord.ui.View):
                 color=discord.Colour.red(),
             )
             view = discord.ui.View()
-            button = discord.ui.Button(
-                label="Support", url="https://discord.gg/GQSGChbEKz"
-            )
+            button = discord.ui.Button(label="Support", url="https://discord.gg/GQSGChbEKz")
             view.add_item(button)
 
             await interaction.followup.send(embed=embed, view=view, ephemeral=True)
-        elif isinstance(error, ButtonOnCooldown):
+        elif isinstance(error, ButtonOnCooldownError):
             embed = discord.Embed(
                 title="Stop clicking the button too fast!",
                 description=f"{WARN_EMOJI} You are clicking the button too fast. Please retry after {error.retry_after: .2f}s.",
                 color=discord.Colour.red(),
             )
             view = discord.ui.View()
-            button = discord.ui.Button(
-                label="Support", url="https://discord.gg/GQSGChbEKz"
-            )
+            button = discord.ui.Button(label="Support", url="https://discord.gg/GQSGChbEKz")
             view.add_item(button)
 
             await interaction.followup.send(embed=embed, view=view, ephemeral=True)
         else:
-            if not isinstance(
-                error, (discord.HTTPException, discord.errors.InteractionResponded)
-            ):
+            if not isinstance(error, (discord.HTTPException, discord.errors.InteractionResponded)):
                 if not interaction.response.is_done():
                     await interaction.response.defer(thinking=True, ephemeral=True)
 
@@ -71,16 +63,12 @@ class BaseView(discord.ui.View):
                     color=discord.Colour.red(),
                 )
                 view = discord.ui.View()
-                button = discord.ui.Button(
-                    label="Support", url="https://discord.gg/GQSGChbEKz"
-                )
+                button = discord.ui.Button(label="Support", url="https://discord.gg/GQSGChbEKz")
                 view.add_item(button)
 
                 await interaction.followup.send(embed=embed, view=view, ephemeral=True)
                 sentry_sdk.capture_exception(error)
-                return interaction.client.log_handler.log.exception(
-                    "Exception occurred in the View:\n", exc_info=error
-                )
+                return interaction.client.log_handler.log.exception("Exception occurred in the View:\n", exc_info=error)
 
     async def on_timeout(self) -> None:
         for item in self.children:
@@ -107,9 +95,7 @@ class LeaveGiveawayView(BaseView):
         super().__init__(timeout=60)
 
     @discord.ui.button(label="Leave Giveaway", style=discord.ButtonStyle.red)
-    async def callback(
-        self, interaction: Interaction, button: discord.ui.Button
-    ) -> None:
+    async def callback(self, interaction: Interaction, button: discord.ui.Button) -> None:
         await interaction.response.defer()
 
         assert interaction.message is not None
@@ -161,9 +147,7 @@ class GiveawayButton(discord.ui.Button["GiveawayView"]):
             message_id=interaction.message.id,
         )
         if giveaway is None:
-            raise GiveawayError(
-                "The giveaway associated with this message was not found."
-            )
+            raise GiveawayError("The giveaway associated with this message was not found.")
 
         try:
             entries = await giveaway.join(interaction.user)
@@ -181,18 +165,14 @@ class GiveawayButton(discord.ui.Button["GiveawayView"]):
             self.label = str(entries)
             await interaction.edit_original_response(view=self.view)
 
-        await interaction.client.send(
-            interaction, "You have successfully joined the giveaway!", ephemeral=True
-        )
+        await interaction.client.send(interaction, "You have successfully joined the giveaway!", ephemeral=True)
 
 
 class ParticipantsPaginator(BaseButtonPaginator[Participant]):
     async def format_page(self, participants: List[Participant], /) -> discord.Embed:
         assert self.bot is not None
 
-        description = (
-            "These are the members that have participated in the giveaway:\n\n"
-        )
+        description = "These are the members that have participated in the giveaway:\n\n"
 
         start_number = (self.current_page - 1) * self.per_page
 
@@ -200,18 +180,10 @@ class ParticipantsPaginator(BaseButtonPaginator[Participant]):
             verb = "entry" if user_entries == 1 else "entries"
 
             display_number = start_number + i + 1
-            description += (
-                f"{display_number}. <@!{user_id}> (**{user_entries}** {verb})\n"
-            )
+            description += f"{display_number}. <@!{user_id}> (**{user_entries}** {verb})\n"
 
-        total_participants: int = (
-            self.extras.get("total_participants", 0) if self.extras is not None else 0
-        )
-        total_unique_participants: int = (
-            self.extras.get("total_unique_participants", 0)
-            if self.extras is not None
-            else 0
-        )
+        total_participants: int = self.extras.get("total_participants", 0) if self.extras is not None else 0
+        total_unique_participants: int = self.extras.get("total_unique_participants", 0) if self.extras is not None else 0
 
         description += f"\nTotal Entries: **{total_participants} ({total_unique_participants} Participants)**"
         embed = discord.Embed(description=description, colour=self.bot.colour)
@@ -243,16 +215,11 @@ class ParticipantsButton(discord.ui.Button["GiveawayView"]):
             message_id=interaction.message.id,
         )
         if giveaway is None:
-            raise GiveawayError(
-                "The giveaway associated with this message was not found."
-            )
+            raise GiveawayError("The giveaway associated with this message was not found.")
         if giveaway.participants:
             unqiue_entries = set(giveaway.participants)
             entries = [
-                Participant(
-                    user_id=user_id, entries=giveaway.participants.count(user_id)
-                )
-                for user_id in unqiue_entries
+                Participant(user_id=user_id, entries=giveaway.participants.count(user_id)) for user_id in unqiue_entries
             ]
 
             view = ParticipantsPaginator(
@@ -304,7 +271,7 @@ class GiveawayView(BaseView):
 
     async def interaction_check(self, interaction: Interaction):
         if retry_after := self.cooldown.update_rate_limit(interaction):
-            raise ButtonOnCooldown(retry_after)
+            raise ButtonOnCooldownError(retry_after)
 
         return await super().interaction_check(interaction)
 
@@ -312,24 +279,10 @@ class GiveawayView(BaseView):
 class MainView(BaseView):
     def __init__(self):
         super().__init__(timeout=None)
-        self.add_item(
-            discord.ui.Button(
-                label="Invite", url="https://giftifybot.vercel.app/invite"
-            )
-        )
-        self.add_item(
-            discord.ui.Button(
-                label="Support Server", url="https://giftifybot.vercel.app/support"
-            )
-        )
-        self.add_item(
-            discord.ui.Button(
-                label="Documentation", url="https://giftifybot.vercel.app/documentation"
-            )
-        )
-        self.add_item(
-            discord.ui.Button(label="Website", url="https://giftifybot.vercel.app/")
-        )
+        self.add_item(discord.ui.Button(label="Invite", url="https://giftifybot.vercel.app/invite"))
+        self.add_item(discord.ui.Button(label="Support Server", url="https://giftifybot.vercel.app/support"))
+        self.add_item(discord.ui.Button(label="Documentation", url="https://giftifybot.vercel.app/documentation"))
+        self.add_item(discord.ui.Button(label="Website", url="https://giftifybot.vercel.app/"))
 
 
 class ConfirmationView(BaseView):
@@ -365,9 +318,7 @@ class ConfirmationView(BaseView):
         if interaction.user and interaction.user.id == self.interaction.user.id:
             return True
         else:
-            await interaction.response.send_message(
-                "This confirmation dialog is not for you.", ephemeral=True
-            )
+            await interaction.response.send_message("This confirmation dialog is not for you.", ephemeral=True)
             return False
 
     async def on_timeout(self) -> None:
