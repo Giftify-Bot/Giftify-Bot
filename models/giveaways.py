@@ -658,17 +658,19 @@ class Giveaway:
 
         while count > 0 and participants:
             member_id = random.choice(participants)
+            participants.remove(member_id)
+
             member = await self.bot.get_or_fetch_member(guild, member_id)
-            if member is not None and member not in winners:
+
+            if member and member not in winners:
                 try:
                     await self.check_requirements(member)
                 except GiveawayError:
-                    pass
-                else:
-                    winners.append(member)
-                    count -= 1
+                    if not self.can_bypass(member):
+                        continue
 
-            participants.remove(member_id)
+                winners.append(member)
+                count -= 1
 
         return winners
 
