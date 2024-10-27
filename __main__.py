@@ -41,10 +41,6 @@ EXTENSIONS: tuple[str, ...] = (
     "webserver",
 )
 
-with Path("schema.sql").open() as file:
-    query = file.read()
-
-
 async def main() -> None:
     async with aiohttp.ClientSession() as session, asyncpg.create_pool(
         dsn=os.environ["POSTGRESQL_DSN"],
