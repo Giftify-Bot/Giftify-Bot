@@ -52,8 +52,6 @@ async def main() -> None:
     ) as pool, LogHandler() as log_handler, AmariClient(os.environ["AMARI_TOKEN"]) as amari_client, Giftify(
         log_handler=log_handler, pool=pool, session=session, amari_client=amari_client
     ) as bot:
-        await pool.execute(query)
-
         await bot.load_extension("jishaku")
         await bot.load_extension("cogs.timer_manager")
 
