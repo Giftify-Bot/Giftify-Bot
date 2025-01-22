@@ -219,7 +219,7 @@ class ChannelConfig:
         """
 
         query = """DELETE FROM channel_configs
-                    WHERE guild = $ AND channel = $2"""
+                    WHERE guild = $1 AND channel = $2"""
 
         await pool.execute(query, guild_id, channel_id)
 
